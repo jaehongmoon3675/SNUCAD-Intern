@@ -1,15 +1,9 @@
 #include <iostream>
-
-#include "ReadFile.h"
-#include "Cell.h"
-#include "Net.h"
-
 #include <list>
 
-class Block{
-
-};
-
+#include "Cell.h"
+#include "Net.h"
+#include "ReadFile.h"
 
 int main(){
     int N, C; //the num of net and cell, respectively
@@ -20,4 +14,10 @@ int main(){
     read_hgr_map(C, CELL_array);
     read_hgr_area(C, CELL_array);
 
+    for(int i = 1; i <= C; i++){
+        printf("Cell num: %d, ", i);
+        CELL_array[i].print_Cell();
+    }
+
+    return 0;
 }
