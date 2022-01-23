@@ -1,28 +1,23 @@
 #include <iostream>
-#include <list>
 
-using namespace std;
+#include "ReadFile.h"
+#include "Cell.h"
+#include "Net.h"
+
+#include <list>
 
 class Block{
 
 };
 
-class Net{
-public:
-private:
-    int gain;
-    bool cut_state;
-    list<Cell *> cell_array;
-};
 
-class Cell{
-public:
-private:
-    int size;
-    int pin;
-    bool locked;
+int main(){
+    int N, C; //the num of net and cell, respectively
+    Net* NET_array = nullptr;
+    Cell* CELL_array = nullptr;
 
-    list<Net *> net_array;
-};
+    read_hgr(N, C, NET_array, CELL_array);
+    read_hgr_map(C, CELL_array);
+    read_hgr_area(C, CELL_array);
 
-int main();
+}
