@@ -71,7 +71,9 @@ void read_hgr_map(const int C, Cell* &CELL_array){
         printf("No map file\n");
 }
 
-void read_hgr_area(const int C, Cell* &CELL_array){
+int read_hgr_area(const int C, Cell* &CELL_array){
+    int total_weight = 0;
+    
     std::ifstream readFile;
     readFile.open("initPlace.def.area");
 
@@ -83,6 +85,7 @@ void read_hgr_area(const int C, Cell* &CELL_array){
         for(int i = 1; i <= C; i++){
             readFile >> temp_cell_size;
 
+            total_weight += temp_cell_size;
             CELL_array[i].set_size(temp_cell_size);
         }
 
@@ -90,5 +93,8 @@ void read_hgr_area(const int C, Cell* &CELL_array){
     }
     else{
         printf("No area file\n");
+        total_weight = C;
     }
+
+    return total_weight;
 }
