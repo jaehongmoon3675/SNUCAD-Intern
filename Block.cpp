@@ -105,6 +105,18 @@ public:
 
         return max_gain_cell;
     }
+    void remove_from_BUCKET(Cell* cell){
+        if(this != cell->get_current_block())
+            printf("error on remove_from_BUCKET() of Block Class\n");
+        
+        if(cell->BUCKETpre == nullptr)
+            BUCKET[gain[cell->cell_num]] = cell->BUCKETnext;
+        else
+            cell->BUCKETpre->BUCKETnext = cell->BUCKETnext;
+        
+        if(cell->BUCKETnext != nullptr)
+            cell->BUCKETnext->BUCKETpre = cell->BUCKETpre;
+    }
     double get_modified_balance_factor(Cell* cell){
         double modified_r = ((double)size + cell->get_size()) / W;
 
@@ -131,7 +143,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array){
 
 }
 
-//implement how to choose the base cell
+//implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell(Block &A, Block &B, int r){ //r is a balance factor
     Cell* max_gain_cellA, * max_gain_cellB;
     max_gain_cellA = A.get_max_gain_cell();
@@ -139,15 +151,27 @@ Cell* ChooseBaseCell(Block &A, Block &B, int r){ //r is a balance factor
 
     if(max_gain_cellA == nullptr && max_gain_cellB == nullptr)
         return nullptr;
-    else if(max_gain_cellA == nullptr)
+    else if(max_gain_cellA == nullptr){
+        FreeCellList.push(max_gain_cellB);
+        B.remove_from_BUCKET(max_gain_cellB);
         return max_gain_cellB;
-    else if(max_gain_cellB == nullptr)
-        return max_gain_cellB;
+    }
+    else if(max_gain_cellB == nullptr){
+        FreeCellList.push(max_gain_cellA);
+        A.remove_from_BUCKET(max_gain_cellA);
+        return max_gain_cellA;
+    }
     else{
-        if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) < std::abs(B.get_modified_balance_factor(max_gain_cellB) - r))
+        if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) < std::abs(B.get_modified_balance_factor(max_gain_cellB) - r)){
+            FreeCellList.push(max_gain_cellA);
+            A.remove_from_BUCKET(max_gain_cellA);
             return max_gain_cellA;
-        else
+        }
+        else{
+            FreeCellList.push(max_gain_cellB);
+            B.remove_from_BUCKET(max_gain_cellB);
             return max_gain_cellB;
+        }
     }
 }
 
