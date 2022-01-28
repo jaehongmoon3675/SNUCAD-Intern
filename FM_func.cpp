@@ -1,8 +1,10 @@
 #include <iostream>
+#include <list>
+
 #include "Cell.h"
 #include "Net.h"
 
-void getMax(const int C, const Cell* CELL_array, int &pmax, int &smax){
+void get_max(const int C, const Cell* CELL_array, int &pmax, int &smax){
     pmax = -1;
     smax = -1;
 

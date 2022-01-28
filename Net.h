@@ -1,12 +1,11 @@
 #ifndef __NET_H__
 #define __NET_H__
 
-class Cell;
-extern int NetCount;  //in ReadFile.cpp
+class Cell;  //in ReadFile.cpp
 
 class Net{
 public:
-    Net() : net_num(NetCount++), size(0), cut_state(false), cell_list(std::list<Cell*>()) {}
+    Net() : net_num(0), size(0), cut_state(false), cell_list(std::list<Cell*>()) {}
     void push_cell(Cell* c){
         cell_list.push_back(c);
         size += c->get_size();
@@ -14,6 +13,7 @@ public:
     int get_net_num(){
         return net_num;
     }
+    void set_net_num(int num) { net_num = num; };
     ~Net(){
 
     }

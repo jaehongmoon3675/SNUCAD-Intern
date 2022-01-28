@@ -37,6 +37,8 @@ struct CellNode{
 */
 
 void Block::CalculateDistribution(Cell* CELL_array){
+    //printf("CalDist start\n");
+
     for(int i = 1; i <= N; i++){
         Fdistribution[i] = 0;
         Ldistribution[i] = 0;
@@ -47,30 +49,38 @@ void Block::CalculateDistribution(Cell* CELL_array){
             CELL_array[i].get_net_list(Fdistribution);
         }
     }
+
+    //printf("CalDist end\n");
 }
-void Block::CellGainAdjustment(Cell &c){ //inner loop of implementation of the code prior to Proposition 2
-    int gain_adjust;
+void Block::CellGainAdjustment(Block &T, Cell &c){ //inner loop of implementation of the code prior to Proposition 2
+    //printf("CellGainAdjust start\n");
+    
+    int gain_adjust = 0;
     if(this == c.get_current_block()){ //if this block is F (from block)
         for(auto i = c.net_list.begin(); i != c.net_list.end(); i++){
             if(Fdistribution[(*i)->get_net_num()] == 1)
                 gain_adjust++;
         }
-    } 
-    else{
+
         for(auto i = c.net_list.begin(); i != c.net_list.end(); i++){ //if this block is T (to block)
-            if(Fdistribution[(*i)->get_net_num()] == 0)
+            if((T.Fdistribution[(*i)->get_net_num()] + T.Ldistribution[(*i)->get_net_num()]) == 0)
                 gain_adjust--;
         }
+
+        //printf("c.cell_num: %d, C: %d, length of array gain: %d\n", c.cell_num, C, sizeof(gain));
+        gain[c.cell_num] = gain_adjust;
+        c.BUCKETpre = nullptr;
+        c.BUCKETnext = BUCKET[gain_adjust];
+
+        if(BUCKET[gain_adjust] != nullptr)
+            BUCKET[gain_adjust]->BUCKETpre = &c;
+        
+        BUCKET[gain_adjust] = &c;
+
+        if(gain_adjust >= max_gain)
+            max_gain = gain_adjust;
     }
-
-    gain[c.cell_num] = gain_adjust;
-    c.BUCKETpre = nullptr;
-    c.BUCKETnext = BUCKET[gain_adjust];
-    BUCKET[gain_adjust]->BUCKETpre = &c;
-    BUCKET[gain_adjust] = &c;
-
-    if(gain_adjust >= max_gain)
-        max_gain = gain_adjust;
+    //printf("CellGainAdjust end\n");
 }
 Cell* Block::get_max_gain_cell() const{
     int i = max_gain;
@@ -111,8 +121,16 @@ void Block::remove_from_BUCKET(Cell* cell){
         cell->BUCKETnext->BUCKETpre = cell->BUCKETpre;
 }
 
-bool Block::push_Cell(Cell* cell){ //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
+bool Block::push_Cell(Cell* cell){ //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환    
+    //printf("push_Cell\n");
+    //printf("pushed cell num: %d ", cell->cell_num);
+    //std::cout << name <<std::endl;
+    
+    //printf("%d %d\n", size, cell->get_size());
+    //printf("%f", ubound);
+
     if(size + cell->get_size() <= ubound){
+        //printf("push_Cell: return true\n");
         cell->set_current_block(this);
         size += cell->get_size();
 
@@ -125,7 +143,7 @@ bool Block::push_Cell(Cell* cell){ //cell을 추가하였을 때 size가 ubound�
 
 void Block::print_Block(){
     printf("------------------------------------------\n");
-    printf("max_gain: %d, lbound: %d , ubound: %d, size: %d\n", max_gain, lbound, ubound, size);
+    printf("max_gain: %d, lbound: %f , ubound: %f, size: %d\n", max_gain, lbound, ubound, size);
     
     printf("------------------------------------------\n");
     printf("Fdistribution & Ldistribution\n");
@@ -139,11 +157,11 @@ void Block::print_Block(){
     printf("------------------------------------------\n");
     printf("gain of cell\n");
     for(int i = 1; i <= C; i++)
-        printf("cell %d: %d", i, gain[i]);
+        printf("cell %d: %d ", i, gain[i]);
     printf("\n");
 
     printf("------------------------------------------\n");
-    printf("BUCKET");
+    printf("BUCKET\n");
     
     int head = max_gain;
     Cell *cell_head = nullptr;
@@ -161,6 +179,8 @@ void Block::print_Block(){
         printf("\n");
         head--;
     }
+
+    printf("\n");
 }
 
 
@@ -169,18 +189,19 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     int i;
 
     for(i = 1; i <= C; i++){
-        if(!A.push_Cell(CELL_array + i));
+        if(!A.push_Cell(CELL_array + i))
             break;
-        
+        //printf("push in A\n");
         FreeCellList.push(CELL_array + i);
     }
 
     for(; i <= C; i++){
-        if(!B.push_Cell(CELL_array + i));
+        if(!B.push_Cell(CELL_array + i))
             break;
-
+        //printf("push in B\n");
         FreeCellList.push(CELL_array + i);
     }
+    //printf("end\n");
 
     if(i == C)
         printf("Error on BlockInitialization");
@@ -220,6 +241,8 @@ Cell* ChooseBaseCell(Block &A, Block &B, int r){ //r is a balance factor
 
 //implementation of the code prior to Proposition 2
 void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
+    //printf("BlockReinit start\n");
+
     A.CalculateDistribution(CELL_array);
     B.CalculateDistribution(CELL_array);
     
@@ -229,7 +252,9 @@ void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
         ctemp = FreeCellList.top();
         FreeCellList.pop();
 
-        A.CellGainAdjustment(*ctemp);
-        B.CellGainAdjustment(*ctemp);
+        A.CellGainAdjustment(B, *ctemp);
+        B.CellGainAdjustment(A, *ctemp);
     }
+
+    //printf("BlockReinit end\n");
 }

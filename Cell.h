@@ -3,16 +3,19 @@
 
 class Net;
 class Block;
-extern int CellCount; //in ReadFile.cpp
 
 class Cell{
 public:
     friend Block;
 
-    Cell() : size(1), pin(0), cell_num(CellCount), name(std::to_string(CellCount++)), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()) {}
+    Cell() : size(1), pin(0), cell_num(0), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()) {}
     void push_net(Net *n){
         net_list.push_back(n);
         pin++;
+    }
+    void set_cell_num(int num){
+        cell_num = num;
+        name = std::to_string(num);
     }
     int get_pin() const{
         return pin;
@@ -46,5 +49,7 @@ private:
     std::string name;
     std::list<Net *> net_list;
 };
+
+void printCellInfo(Cell* CELL_array, int C);
 
 #endif

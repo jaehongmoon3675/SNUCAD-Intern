@@ -25,11 +25,15 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
         NET_array = new Net[N + 1];
         CELL_array = new Cell[C + 1];
 
+        for(int i = 1; i <= C; i++)
+            CELL_array[i].set_cell_num(i);
+
         for(int i = 1; i <= N; i++){
             do{ 
                 readFile >> temp_cell;
                 pin_num++;;
 
+                NET_array[i].set_net_num(i);
                 NET_array[i].push_cell(CELL_array + temp_cell);
                 CELL_array[temp_cell].push_net(NET_array + i);
 
