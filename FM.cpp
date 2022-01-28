@@ -5,6 +5,7 @@
 #include "Net.h"
 #include "ReadFile.h"
 #include "FM_func.h"
+#include "Block.h"
 
 int main(){
     int N, C; //the num of net and cell, respectively
@@ -32,6 +33,15 @@ int main(){
     get_max(C, CELL_array, pmax, smax);
     balance_low_bound = r*W + smax;
     balance_up_bound = r*W + smax;
+
+    Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r);
+    Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r);
+
+    BlockInitialization(A, B, CELL_array, C);
+    BlockReinitialization(A, B, CELL_array);
+
+    A.print_Block();
+    B.print_Block();
 
     return 0;
 }

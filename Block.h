@@ -1,3 +1,6 @@
+#ifndef __BLOCK_H__
+#define __BLOCK_H__
+
 #include "Cell.h"
 #include "Net.h"
 
@@ -46,3 +49,5 @@ Cell* ChooseBaseCell(Block &A, Block &B, int r); //r is a balance factor
 
 //implementation of the code prior to Proposition 2
 void BlockReinitialization(Block &A, Block &B, Cell* CELL_array);
+
+#endif

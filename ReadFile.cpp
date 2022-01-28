@@ -3,8 +3,8 @@
 #include <string>
 #include <list>
 
-#include "Net.h"
 #include "Cell.h"
+#include "Net.h"
 
 int CellCount = 0, NetCount = 0;
 
