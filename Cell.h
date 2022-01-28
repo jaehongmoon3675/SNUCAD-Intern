@@ -17,6 +17,9 @@ public:
     int get_pin() const{
         return pin;
     }
+    void set_current_block(Block* block){
+        CurrentBlock = block;
+    }
     Block* get_current_block() const{
         return CurrentBlock;
     }

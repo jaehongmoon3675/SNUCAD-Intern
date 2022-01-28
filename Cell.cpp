@@ -5,7 +5,7 @@
 #include "Net.h"
 
 void Cell::print_Cell(){
-    std::cout << "name: " << name << ", size: " << size <<", pin_num: " << pin
+    std::cout << "cell_num" << cell_num << "name: " << name << ", size: " << size <<", pin_num: " << pin
                   << std::endl;
     
     std::cout << "Cell " << name << " is included in ";

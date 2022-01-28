@@ -38,8 +38,8 @@ struct CellNode{
 class Block{
 public:    
     Block(int init_pmax, int low_bound, int up_bound, int c, int n, int w, int r)
-        : pmax(init_pmax), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), size(0) {
-        BUCKET = new Cell*[2 * pmax + 1];
+        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), size(0) {
+        BUCKET = (new Cell*[2 * PMAX + 1]) + PMAX;
         Fdistribution = new int[N + 1];
         Ldistribution = new int[N + 1];
         gain = new int[C + 1];
@@ -77,13 +77,13 @@ public:
         BUCKET[gain_adjust]->BUCKETpre = &c;
         BUCKET[gain_adjust] = &c;
 
-        if(gain_adjust >= pmax)
-            pmax = gain_adjust;
+        if(gain_adjust >= max_gain)
+            max_gain = gain_adjust;
     }
     Cell* get_max_gain_cell() const{
-        int i = pmax;
+        int i = max_gain;
         double modified_r;
-        Cell* max_gain_cell = BUCKET[pmax];
+        Cell* max_gain_cell = BUCKET[max_gain];
 
         do{
             modified_r = ((double)size + max_gain_cell->get_size()) / W;
@@ -122,8 +122,58 @@ public:
 
         return modified_r;
     }
+    bool push_Cell(Cell* cell){ //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
+        if(size + cell->get_size() <= ubound){
+            cell->set_current_block(this);
+            size += cell->get_size();
+
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    void print_Block(){
+        printf("------------------------------------------\n");
+        printf("max_gain: %d, lbound: %d , ubound: %d, size: %d\n", max_gain, lbound, ubound, size);
+        
+        printf("------------------------------------------\n");
+        printf("Fdistribution & Ldistribution\n");
+        for(int i = 1; i <= N; i++)
+            printf("net %d: %d ", i, Fdistribution[i]);
+        printf("\n");
+        for(int i = 1; i <= N; i++)
+            printf("net %d: %d ", i, Ldistribution[i]);
+        printf("\n");
+
+        printf("------------------------------------------\n");
+        printf("gain of cell\n");
+        for(int i = 1; i <= C; i++)
+            printf("cell %d: %d", i, gain[i]);
+        printf("\n");
+
+        printf("------------------------------------------\n");
+        printf("BUCKET");
+        
+        int head = max_gain;
+        Cell *cell_head = nullptr;
+
+        while(BUCKET[head] != nullptr){
+            cell_head = BUCKET[head];
+
+            printf("gain %d: ", head);
+
+            while(cell_head != nullptr){
+                printf("%d ", cell_head->cell_num);
+                cell_head = cell_head->BUCKETnext;
+            }
+
+            printf("\n");
+            head--;
+        }
+    }
     ~Block(){
-        delete[] BUCKET;
+        delete[] (BUCKET - PMAX);
         delete[] Fdistribution; //Free Distribution
         delete[] Ldistribution; //Locked Distribution
         delete[] gain;
@@ -132,15 +182,33 @@ private:
     Cell** BUCKET;
     int* Fdistribution, * Ldistribution;
     int* gain;
-    int pmax;
+    const int PMAX;
+    int max_gain;
     int lbound, ubound;
     int size;
     const int C, N, W, R;
 };
 
-//block의 사이즈도 여기서 계산해주어야 한다.
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array){
+//block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
+    int i;
 
+    for(i = 1; i <= C; i++){
+        if(!A.push_Cell(CELL_array + i));
+            break;
+        
+        FreeCellList.push(CELL_array + i);
+    }
+
+    for(; i <= C; i++){
+        if(!B.push_Cell(CELL_array + i));
+            break;
+
+        FreeCellList.push(CELL_array + i);
+    }
+
+    if(i == C)
+        printf("Error on BlockInitialization");
 }
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
