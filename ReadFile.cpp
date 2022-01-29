@@ -6,8 +6,6 @@
 #include "Cell.h"
 #include "Net.h"
 
-int CellCount = 0, NetCount = 0;
-
 int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
     int pin_num = 0;
     std::ifstream readFile;
@@ -39,10 +37,12 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
 
                 if(readFile.eof())
                     break;
+                
                 readFile.get(c);
+
                 if(readFile.eof())
                     break;
-            }while(c != '\n');
+            }while(readFile.peek() != '\n');
         }
 
         readFile.close();

@@ -6,7 +6,9 @@ class Block;
 
 class Cell{
 public:
-    friend Block;
+    std::list<Net *> net_list;
+    bool locked;
+    Cell* BUCKETpre, * BUCKETnext;
 
     Cell() : size(1), pin(0), cell_num(0), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()) {}
     void push_net(Net *n){
@@ -26,6 +28,9 @@ public:
     Block* get_current_block() const{
         return CurrentBlock;
     }
+    int get_cell_num() const{
+        return cell_num;
+    }
     int get_size() const{
         return size;
     }
@@ -35,6 +40,7 @@ public:
     void set_name(std::string name){
         this->name = name;
     }
+    std::string get_cell_name(){ return name; }
     void print_Cell();
     void get_net_list(int* distribution); //add the distribution of net list to the array 'distribution'
     ~Cell(){
@@ -43,11 +49,8 @@ private:
     int size;
     int pin;
     int cell_num;
-    bool locked;
-    Cell* BUCKETpre, * BUCKETnext;
     Block* CurrentBlock;
     std::string name;
-    std::list<Net *> net_list;
 };
 
 void printCellInfo(Cell* CELL_array, int C);

@@ -5,6 +5,8 @@ class Cell;  //in ReadFile.cpp
 
 class Net{
 public:
+    std::list<Cell*> cell_list;
+
     Net() : net_num(0), size(0), cut_state(false), cell_list(std::list<Cell*>()) {}
     void push_cell(Cell* c){
         cell_list.push_back(c);
@@ -21,7 +23,6 @@ private:
     int net_num;
     int size;
     bool cut_state;
-    std::list<Cell*> cell_list;
 };
 
 #endif
