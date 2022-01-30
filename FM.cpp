@@ -34,7 +34,7 @@ int main(){
     Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
     Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "B");
 
-    BlockInitialization(A, B, CELL_array, C);
+    BlockInitialization(A, B, CELL_array, NET_array, C, N);
     BlockReinitialization(A, B, CELL_array);
 
     min_cutset_num = CountCutNet(A, NET_array, N);

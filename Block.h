@@ -64,8 +64,13 @@ private:
     const double R;
 };
 
+
+//VERSION1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
+//void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
+
+//VERSION 2
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell(Block &A, Block &B, double r); //r is a balance factor

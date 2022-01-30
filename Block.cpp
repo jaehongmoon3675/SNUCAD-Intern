@@ -3,6 +3,7 @@
 #include <string>
 #include <list>
 #include <stack>
+#include <queue>
 
 #include "Cell.h"
 #include "Net.h"
@@ -312,6 +313,7 @@ void Block::print_Block(Cell* CELL_array){
 }
 
 
+/* //VERSION 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     int i;
@@ -335,6 +337,68 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
 
     if(i == C)
         printf("Error on BlockInitialization");
+}
+*/
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
+    std::queue<Net *> net_queue;
+    Net* temp_net = nullptr;
+    bool check = true;
+
+    bool* NET_check_array = new bool[N + 1];
+
+    for(int i = 1; i <= N; i++)
+        NET_check_array[i] = true;
+
+    net_queue.push(NET_array + 1);
+    NET_check_array[1] = false;
+
+    while(check){
+        temp_net = net_queue.front();
+        net_queue.pop();
+
+        for(auto itr = temp_net->cell_list.begin(); itr != temp_net->cell_list.end(); itr++){
+            if((*itr)->get_current_block() == &A)
+                continue;
+
+            if(A.push_Cell(*itr)){
+                FreeCellList.push(*itr);
+                for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if(NET_check_array[(*jtr)->get_net_num()]){
+                        net_queue.push(*jtr);
+                        NET_check_array[(*jtr)->get_net_num()] = false;
+                    }
+                }
+            }
+            else{
+                check = false;
+                break; // A가 가득 찼으므로 break, 나머지는 B에 채우자                
+            }
+        }
+
+        if(check){
+            for(int i = 1; i <= N; i++)
+                if(NET_check_array[i]){
+                    net_queue.push(NET_array + i);
+                    NET_check_array[i] = false;
+                }
+        }
+    }
+
+    int i;
+
+    for(i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() != &A){
+            if(!B.push_Cell(CELL_array + i))
+                break;
+            
+            FreeCellList.push(CELL_array + i);
+        }
+    }
+
+    if(i <= C)
+        printf("Initialization error!\n");
+
+    delete[] NET_check_array;
 }
 
 //implementation of the code prior to Proposition 2
