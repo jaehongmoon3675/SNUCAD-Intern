@@ -12,9 +12,10 @@ int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    int pass = 10; //how many pass we go through
+    int pass = 5; //how many pass we go through
     int k = 1;
     int min_cutset_num;
+    bool balance_option = true; //true면 smax 기반, false면 비율 기반
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
@@ -25,14 +26,22 @@ int main(){
     int pmax = 0, smax = 0;
     double balance_low_bound = 0, balance_up_bound = 0;
     get_max(C, CELL_array, pmax, smax);
-    balance_low_bound = r*W - smax * k;
-    balance_up_bound = r*W + smax * k;
+
+    if(balance_option){
+        balance_low_bound = r*W - smax * k;
+        balance_up_bound = r*W + smax * k;
+    }
+    else{
+        balance_low_bound = (r - 0.2)*W;
+        balance_up_bound = (r + 0.2)*W;
+    }
 
     printf("N: %d C: %d, P: %d, W: %d, R: %f\n", N, C, P, W, r);
     printf("pmax: %d, smax: %d\n", pmax, smax);
+    printf("balance low bound: %f, balance up bound: %f\n", balance_low_bound, balance_up_bound);
 
     Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
-    Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "B");
+    Block B(pmax, W - balance_up_bound, W - balance_low_bound, C, N, W, r, "B");
 
     BlockInitialization(A, B, CELL_array, NET_array, C, N);
     BlockReinitialization(A, B, CELL_array);

@@ -152,7 +152,10 @@ void Block::remove_from_BUCKET(Cell* cell){
 }
 
 void Block::adjust_maxgain(){
-    while(BUCKET[max_gain] == nullptr && max_gain >= -PMAX){
+    if(max_gain > PMAX)
+        max_gain = PMAX;
+
+    while(max_gain >= -PMAX && BUCKET[max_gain] == nullptr){
         max_gain--;
     }
 }
@@ -339,10 +342,14 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         printf("Error on BlockInitialization");
 }
 */
+
+/*
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
     bool check = true;
+    //bool alter = true;
+    //Block* current_block = &A;
 
     bool* NET_check_array = new bool[N + 1];
 
@@ -400,6 +407,88 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
     delete[] NET_check_array;
 }
+*/
+
+//BlockInitialization ver3
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
+    std::queue<Net *> net_queue;
+    Net* temp_net = nullptr;
+    bool check = true;
+    bool alter = true; //true면 A, false면 B
+    Block* current_block = &A;
+
+    bool* NET_check_array = new bool[N + 1]; //Block의 위치(A, B)를 배당받지 않으면 true, 아니면 false
+
+    for(int i = 1; i <= N; i++)
+        NET_check_array[i] = true;
+
+    net_queue.push(NET_array + 1);
+    NET_check_array[1] = false;
+
+    while(check){
+        if(net_queue.empty())
+            break;
+        temp_net = net_queue.front();
+        net_queue.pop();
+
+        for(auto itr = temp_net->cell_list.begin(); itr != temp_net->cell_list.end(); itr++){
+            if((*itr)->get_current_block() != nullptr)
+                continue;
+
+            if(current_block->push_Cell(*itr)){
+                FreeCellList.push(*itr);
+                for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if(NET_check_array[(*jtr)->get_net_num()]){
+                        net_queue.push(*jtr);
+                        NET_check_array[(*jtr)->get_net_num()] = false;
+                    }
+                }
+            }
+            else{
+                check = false;
+                alter = !alter;
+                if(alter)
+                    current_block = &A;
+                else   
+                    current_block = &B;     
+                break; // A가 가득 찼으므로 break, 나머지는 B에 채우자                
+            }
+
+            alter = !alter;
+            if(alter)
+                current_block = &A;
+            else   
+                current_block = &B;
+
+        }
+
+        if(check){
+            for(int i = 1; i <= N; i++)
+                if(NET_check_array[i]){
+                    net_queue.push(NET_array + i);
+                    NET_check_array[i] = false;
+                }
+        }
+    }
+
+    int i;
+
+    for(i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() == nullptr){
+            if(!current_block->push_Cell(CELL_array + i))
+                break;
+            
+            FreeCellList.push(CELL_array + i);
+        }
+    }
+
+
+    if(i <= C)
+        printf("Initialization error! i: %d, C: %d\n", i , C);
+
+    delete[] NET_check_array;
+}
+
 
 //implementation of the code prior to Proposition 2
 void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
