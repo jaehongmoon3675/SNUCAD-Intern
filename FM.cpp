@@ -49,9 +49,11 @@ int main(){
     min_cutset_num = CountCutNet(A, NET_array, N);
     printf("initial cutset num: %d\n", min_cutset_num);
     write_output(A, CELL_array, C);
-    //printCellInfo(CELL_array, C);
+    
+    printCellInfo(CELL_array, C);
+    printNetInfo(NET_array, N);
 
-    /*
+    
     printf("start!\n");
     printf("Block A\n");
     A.print_Block(CELL_array);
@@ -59,10 +61,11 @@ int main(){
     printf("\nBlock B\n");
     B.print_Block(CELL_array);
     printf("\n\n");
-    */
+    
 
     Cell* BaseCell = nullptr;
     int temp;
+    int move_count = 1;
 
     for(int i = 0; i < pass; i++){
         BaseCell = ChooseBaseCell(A, B, r);
@@ -92,6 +95,14 @@ int main(){
             printf("\n\n\n\n");
             */
             
+            printf("Move %d\n", move_count++);
+            printf("\nBlock A\n");
+            A.print_Block_short(CELL_array);
+
+            printf("\nBlock B\n");
+            B.print_Block_short(CELL_array);
+            printf("\n\n\n");
+
             temp = CountCutNet(A, NET_array, N);
             //printf("num of cutset: %d\n", temp);
 
@@ -99,7 +110,7 @@ int main(){
                 min_cutset_num = temp;
                 //CountCutNetAgain(A, NET_array, N);
 
-                printf("min chagne: %d\n", temp);
+                //printf("min chagne: %d\n", temp);
                 write_output(A, CELL_array, C);
             }
             BaseCell = ChooseBaseCell(A, B, r);

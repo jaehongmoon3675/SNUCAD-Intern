@@ -42,6 +42,7 @@ public:
     Cell* find_cell_in_block(Net* net);
     bool push_Cell(Cell* cell); //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
     void print_Block(Cell* CELL_array);
+    void print_Block_short(Cell* CELL_array);
     int ith_net_distribution(int i){
         return Fdistribution[i] + Ldistribution[i];
     }

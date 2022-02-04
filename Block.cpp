@@ -315,6 +315,39 @@ void Block::print_Block(Cell* CELL_array){
     printf("\n");
 }
 
+void Block::print_Block_short(Cell* CELL_array){
+
+    printf("------------------------------------------\n");
+    printf("gain of cell\n");
+    for(int i = 1; i <= C; i++)
+        if(CELL_array[i].get_current_block() == this)
+            printf("cell %d: %d ", i, gain[i]);
+    printf("\n");
+
+    printf("------------------------------------------\n");
+    printf("BUCKET\n");
+    
+    int head = max_gain;
+    Cell *cell_head = nullptr;
+
+    while(head >= -PMAX){
+        cell_head = BUCKET[head];
+
+        if(BUCKET[head] != nullptr)
+            printf("gain %d: ", head);
+
+        while(cell_head != nullptr){
+            printf("%d ", cell_head->get_cell_num());
+            cell_head = cell_head->BUCKETnext;
+        }
+        if(BUCKET[head] != nullptr)
+            printf("\n");
+
+        head--;
+    }
+
+    printf("\n");
+}
 
 /* //VERSION 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..

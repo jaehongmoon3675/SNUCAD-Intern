@@ -15,6 +15,15 @@ public:
     int get_net_num(){
         return net_num;
     }
+    void print_Net(){
+        printf("Net %d\t size: %d", net_num, size);
+
+        printf("Net consists of ...\n");
+        for(auto itr = cell_list.begin(); itr != cell_list.end(); itr++){
+            printf("Cell %d ", (*itr)->get_cell_num());
+        }
+        printf("\n");
+    }
     void set_net_num(int num) { net_num = num; };
     ~Net(){
 
@@ -24,5 +33,7 @@ private:
     int size;
     bool cut_state;
 };
+
+void printNetInfo(Net* NET_array, int N);
 
 #endif
