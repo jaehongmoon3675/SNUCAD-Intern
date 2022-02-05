@@ -349,7 +349,7 @@ void Block::print_Block_short(Cell* CELL_array){
     printf("\n");
 }
 
-/* //VERSION 1
+//VERSION 1 ver 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     int i;
@@ -374,9 +374,9 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     if(i == C)
         printf("Error on BlockInitialization");
 }
-*/
 
-/*
+
+/* ver2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
@@ -443,6 +443,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 */
 
 //BlockInitialization ver3
+/*
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
@@ -521,6 +522,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
     delete[] NET_check_array;
 }
+*/
 
 
 //implementation of the code prior to Proposition 2
@@ -576,6 +578,21 @@ Cell* ChooseBaseCell(Block &A, Block &B, double r){ //r is a balance factor
         printf("max_gain_cell B is...\n");
         max_gain_cellB->print_Cell();
         */
+
+        if(A.gain[max_gain_cellA->get_cell_num()] > B.gain[max_gain_cellB->get_cell_num()]){
+            FreeCellList.push(max_gain_cellA);
+            A.remove_from_BUCKET(max_gain_cellA);
+            //printf("choose cell in A3\n");
+            return max_gain_cellA;
+        }
+        else if(A.gain[max_gain_cellA->get_cell_num()] < B.gain[max_gain_cellB->get_cell_num()]){
+            FreeCellList.push(max_gain_cellB);
+            B.remove_from_BUCKET(max_gain_cellB);
+            //printf("choose cell in B3\n");
+            return max_gain_cellB;
+        }
+            
+    
 
         //std::cout << std::endl << "A: " << std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) << ", B: " << std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB)) <<std::endl;
         if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) < std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){

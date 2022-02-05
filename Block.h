@@ -6,7 +6,8 @@
 
 class Block{
 public:
-    friend void MoveCell(Block &F, Block &T, Cell* BaseCell);
+    int* Fdistribution, * Ldistribution;
+    int* gain;
 
     Block(int init_pmax, double low_bound, double up_bound, int c, int n, int w, double r, std::string block_name)
         : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), size(0), name(block_name) {
@@ -54,8 +55,6 @@ public:
     }
 private:
     Cell** BUCKET;
-    int* Fdistribution, * Ldistribution;
-    int* gain;
     const int PMAX;
     int max_gain;
     double lbound, ubound;
@@ -68,10 +67,10 @@ private:
 
 //VERSION1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
-//void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
 
-//VERSION 2
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
+//VERSION 2 Ver3
+//void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell(Block &A, Block &B, double r); //r is a balance factor
