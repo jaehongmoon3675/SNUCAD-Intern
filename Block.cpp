@@ -276,9 +276,11 @@ void Block::print_Block(Cell* CELL_array){
     
     printf("------------------------------------------\n");
     printf("Fdistribution & Ldistribution\n");
+    printf("Free: ");
     for(int i = 1; i <= N; i++)
         printf("net %d: %d ", i, Fdistribution[i]);
     printf("\n");
+    printf("Lock: ");
     for(int i = 1; i <= N; i++)
         printf("net %d: %d ", i, Ldistribution[i]);
     printf("\n");
@@ -349,6 +351,7 @@ void Block::print_Block_short(Cell* CELL_array){
     printf("\n");
 }
 
+
 //VERSION 1 ver 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
@@ -361,7 +364,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         FreeCellList.push(CELL_array + i);
     }
 
-    printf("%d th cell is on block B\n", i);
+    //printf("%d th cell is on block B\n", i);
 
     for(; i <= C; i++){
         if(!B.push_Cell(CELL_array + i))
@@ -375,8 +378,8 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         printf("Error on BlockInitialization");
 }
 
-
-/* ver2
+/*
+//ver2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
@@ -443,7 +446,6 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 */
 
 //BlockInitialization ver3
-/*
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
@@ -522,7 +524,6 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
     delete[] NET_check_array;
 }
-*/
 
 
 //implementation of the code prior to Proposition 2

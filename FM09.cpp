@@ -11,7 +11,7 @@
 int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
-    double r = 0.55; //balance factor
+    double r = 0.5; //balance factor
     int pass = 10; //how many pass we go through
     int k = 10;
     int min_cutset_num;
@@ -28,39 +28,35 @@ int main(){
     get_max(C, CELL_array, pmax, smax);
 
     if(balance_option){
-        printf("balance ratio: %f, num of pass: %d, k: %d\n", r, pass, k);
         balance_low_bound = r*W - smax * k;
         balance_up_bound = r*W + smax * k;
     }
     else{
-        printf("balance ratio +- 0.1: %f, num of pass: %d\n", r, pass);
-        balance_low_bound = (r - 0.1)*W;
-        balance_up_bound = (r + 0.1)*W;
+        balance_low_bound = (r - 0.2)*W;
+        balance_up_bound = (r + 0.2)*W;
     }
 
-    /*
     printf("N: %d C: %d, P: %d, W: %d, R: %f\n", N, C, P, W, r);
     printf("pmax: %d, smax: %d\n", pmax, smax);
     printf("balance low bound: %f, balance up bound: %f\n", balance_low_bound, balance_up_bound);
-    printf("balance ratio: %f, num of pass: %d, k: %d\n", r, pass, k);
-    */
+
     Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
     Block B(pmax, W - balance_up_bound, W - balance_low_bound, C, N, W, r, "B");
 
     //ver1
-    //BlockInitialization(A, B, CELL_array, C);
+    BlockInitialization(A, B, CELL_array, C);
     //ver2
-    BlockInitialization(A, B, CELL_array, NET_array, C, N);
+    //BlockInitialization(A, B, CELL_array, NET_array, C, N);
     BlockReinitialization(A, B, CELL_array);
 
     min_cutset_num = CountCutNet(A, NET_array, N);
     printf("initial cutset num: %d\n", min_cutset_num);
     write_output(A, CELL_array, C);
     
-    //printCellInfo(CELL_array, C);
+    printCellInfo(CELL_array, C);
     //printNetInfo(NET_array, N);
 
-    /*
+    
     printf("start!\n");
     printf("Block A\n");
     A.print_Block(CELL_array);
@@ -68,7 +64,7 @@ int main(){
     printf("\nBlock B\n");
     B.print_Block(CELL_array);
     printf("\n\n");
-    */
+    
 
     Cell* BaseCell = nullptr;
     int temp;
@@ -84,15 +80,15 @@ int main(){
             else
                 MoveCell(B, A, BaseCell);
             
-            /*
+            
             printf("Move %d\n", move_count++);
             printf("\nBlock A\n");
-            A.print_Block_short(CELL_array);
+            A.print_Block(CELL_array);
 
             printf("\nBlock B\n");
-            B.print_Block_short(CELL_array);
+            B.print_Block(CELL_array);
             printf("\n\n\n");
-            */
+            
 
             temp = CountCutNet(A, NET_array, N);
             //printf("num of cutset: %d\n", temp);
@@ -113,17 +109,17 @@ int main(){
         }
 
         
-        //printf("Pass %d finished\n", i);
+        printf("Pass %d finished\n", i);
         BlockReinitialization(A, B, CELL_array);
-        /*
-        printf("After Pass %d...", i + 1);
+        
+        printf("Reinitialize %d...\n", i + 1);
         printf("Block A\n");
         A.print_Block(CELL_array);
 
         printf("\nBlock B\n");
         B.print_Block(CELL_array);
         printf("\n\n\n\n");
-        */
+        
     }
     /*
     printf("\n\n\n\nAfter Pass...\n");
