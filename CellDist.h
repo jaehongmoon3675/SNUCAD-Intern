@@ -12,6 +12,7 @@ public:
         distribution = new int[C + 1];
     }
     bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet);
+    void overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet);
     void writeCellDist(Cell* CELL_array, int C) const;
     void printCellDist() const;
     int get_A_size() const { return A_size; }
