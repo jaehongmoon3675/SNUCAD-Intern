@@ -4,13 +4,37 @@
 #include "Cell.h"
 #include "Net.h"
 
+struct CellDist{
+    int* distribution;
+    int cutnet;
+    int ideal_balance;
+    int A_size, B_size;
+    int A_count, B_count;
+    Block* BlockA, * BlockB;
+    CellDist(int C, int _ideal_balance, int _cutnet, int _A_size, int _B_size, int _A_count, int _B_count, Block* _BlockA, Block* _BlockB) 
+        : ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(_A_count), B_count(_B_count), BlockA(_BlockA), BlockB(_BlockB) {
+        distribution = new int[C + 1];
+    }
+    bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet);
+    void writeCellDist(Cell* CELL_array, int C);
+    Block* get_ith_cell_current_block(int i){
+        if(distribution[i] == 1)
+            return BlockA;
+        else
+            return BlockB;
+    }
+    ~CellDist() {
+        delete[] distribution;
+    }
+};
+
 class Block{
 public:
     int* Fdistribution, * Ldistribution;
     int* gain;
 
     Block(int init_pmax, double low_bound, double up_bound, int c, int n, int w, double r, std::string block_name)
-        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), size(0), name(block_name) {
+        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), cell_count(0), C(c), N(n), W(w), R(r), size(0), name(block_name) {
         BUCKET = new Cell*[2 * PMAX + 1];
         
         for(int i = 0; i < 2 * PMAX + 1; i++)
@@ -44,9 +68,15 @@ public:
     bool push_Cell(Cell* cell); //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
     void print_Block(Cell* CELL_array);
     void print_Block_short(Cell* CELL_array);
+    void empty_BUCKET();
+    void set_count_0(){ cell_count = 0; }
     int ith_net_distribution(int i){
         return Fdistribution[i] + Ldistribution[i];
     }
+    void increase_cell_count() { cell_count++; }
+    void decrease_cell_count() { cell_count--; }
+    int get_size() { return size; }
+    int get_cell_count() { return cell_count; }
     ~Block(){
         delete[] (BUCKET - PMAX);
         delete[] Fdistribution; //Free Distribution
@@ -59,11 +89,13 @@ private:
     int max_gain;
     double lbound, ubound;
     int size;
+    int cell_count;
     std::string name;
     const int C, N, W;
     const double R;
 };
 
+void LoadDistribution(CellDist &Distribution, Cell* CELL_array, int C);
 
 //VERSION1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..

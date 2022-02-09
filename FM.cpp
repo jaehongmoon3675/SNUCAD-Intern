@@ -1,4 +1,7 @@
+//#define NDEBUG
+
 #include <iostream>
+#include <cassert>
 #include <list>
 
 #include "Cell.h"
@@ -11,11 +14,12 @@
 int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
-    double r = 0.55; //balance factor
+    double r = 0.5; //balance factor
     int pass = 10; //how many pass we go through
     int k = 10;
-    int min_cutset_num;
-    bool balance_option = true; //true면 smax 기반, false면 비율 기반
+    int min_cutnet;
+    int cutnet;
+    bool balance_option = false; //true면 smax 기반, false면 비율 기반
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
@@ -34,8 +38,8 @@ int main(){
     }
     else{
         printf("balance ratio +- 0.1: %f, num of pass: %d\n", r, pass);
-        balance_low_bound = (r - 0.1)*W;
-        balance_up_bound = (r + 0.1)*W;
+        balance_low_bound = (r - 0.05)*W;
+        balance_up_bound = (r + 0.05)*W;
     }
 
     /*
@@ -53,9 +57,12 @@ int main(){
     BlockInitialization(A, B, CELL_array, NET_array, C, N);
     BlockReinitialization(A, B, CELL_array);
 
-    min_cutset_num = CountCutNet(A, NET_array, N);
-    printf("initial cutset num: %d\n", min_cutset_num);
-    write_output(A, CELL_array, C);
+    min_cutnet = CountCutNet(A, NET_array, N);
+    cutnet = min_cutnet;
+
+    CellDist MinDist(C, W*r, cutnet, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), &A, &B);
+
+    printf("initial cutnet num: %d\n", min_cutnet);
     
     //printCellInfo(CELL_array, C);
     //printNetInfo(NET_array, N);
@@ -79,11 +86,15 @@ int main(){
         //BaseCell->print_Cell();
 
         while(BaseCell != nullptr){
-            if(BaseCell->get_current_block() == &A)
+            if(BaseCell->get_current_block() == &A){
                 MoveCell(A, B, BaseCell);
-            else
+                cutnet -= A.gain[BaseCell->get_cell_num()];
+            }
+            else{
                 MoveCell(B, A, BaseCell);
-            
+                cutnet -= A.gain[BaseCell->get_cell_num()];
+            }
+
             /*
             printf("Move %d\n", move_count++);
             printf("\nBlock A\n");
@@ -94,16 +105,13 @@ int main(){
             printf("\n\n\n");
             */
 
-            temp = CountCutNet(A, NET_array, N);
-            //printf("num of cutset: %d\n", temp);
+            assert(CountCutNet(A, NET_array, N) == cutnet);
+            //printf("num of cutnet: %d\n", temp);
 
-            if(min_cutset_num > temp){
-                min_cutset_num = temp;
-                //CountCutNetAgain(A, NET_array, N);
 
-                //printf("min chagne: %d\n", temp);
-                write_output(A, CELL_array, C);
-            }
+            if(MinDist.update(CELL_array, C, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), cutnet))
+                min_cutnet = cutnet;
+
             BaseCell = ChooseBaseCell(A, B, r);
             /*
             if(BaseCell != nullptr)
@@ -114,6 +122,7 @@ int main(){
 
         
         //printf("Pass %d finished\n", i);
+        LoadDistribution(MinDist, CELL_array, C);
         BlockReinitialization(A, B, CELL_array);
         /*
         printf("After Pass %d...", i + 1);
@@ -133,7 +142,10 @@ int main(){
     printf("\nBlock B\n");
     B.print_Block(CELL_array);
     */
-    printf("Final min num of cutset: %d\n", min_cutset_num);
+
+    MinDist.writeCellDist(CELL_array, C);
+
+    printf("Final min num of cutnet: %d\n", min_cutnet);
 
     Check(A, B, NET_array, N);
 

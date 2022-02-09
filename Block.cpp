@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <string>
 #include <list>
@@ -11,31 +12,49 @@
 
 std::stack<Cell*> FreeCellList;
 
-/*
-//Using CellNode to record the best distribution
-struct CellNode{
-    std::string* name;
-    int* distribution;
-    int length;
-    int num_cutnet;
-    int balance;
-    CellNode(int C) : length(C), num_cutnet(0), balance(0) {
-        name = new std::string[C + 1];
-        distribution = new int[C + 1];
-    }
-    void operator=(const Cell* CELL_array){ //무엇이 올지는 좀 나중에 결정해야겠다...
-        delete[] name;
-        delete[] distribution;
 
-        name = new std::string[copy.length];
-        distribution = new std::string
+//Using CellNode to record the best distribution
+
+bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet){
+    if(_cutnet > cutnet)
+        return false;
+    
+    if((_cutnet == cutnet) && (std::abs(_A_size - ideal_balance) > std::abs(A_size - ideal_balance)))
+        return false;
+    
+    for(int i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() == BlockA)
+            distribution[i] = 1;
+        else
+            distribution[i] = 0;
     }
-    ~CellNode() {
-        delete[] name;
-        delete[] distribution;
+
+    A_size = _A_size;
+    B_size = _B_size;
+    A_count = _A_count;
+    B_count = _B_count;
+    cutnet = _cutnet;
+
+    return true;
+}
+
+void CellDist::writeCellDist(Cell* CELL_array, int C){
+    std::string filePath = "output.part";
+    std::ofstream writeFile(filePath.data());
+
+    if(writeFile.is_open()){
+        for(int i = 1; i <= C; i++){
+            writeFile << CELL_array[i].get_cell_name() << " ";
+
+            if(CELL_array[i].get_current_block() == BlockA)
+                writeFile << "1" << std::endl;
+            else
+                writeFile << "0" << std::endl;
+        }
+
+        writeFile.close();
     }
-};
-*/
+}
 
 void Block::CalculateDistribution(Cell* CELL_array){
     //printf("CalDist start\n");
@@ -50,6 +69,9 @@ void Block::CalculateDistribution(Cell* CELL_array){
             CELL_array[i].get_net_list(Fdistribution);
         }
     }
+
+    for(int i = 1; i <= C; i++)
+        cell_count += Fdistribution[i];
 
     //printf("CalDist end\n");
 }
@@ -83,6 +105,7 @@ void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implement
     }
     //printf("CellGainAdjust end\n");
 }
+
 Cell* Block::get_max_gain_cell() const{
     //printf("start get_max_gain_cell()\n");
 
@@ -351,6 +374,17 @@ void Block::print_Block_short(Cell* CELL_array){
     printf("\n");
 }
 
+void Block::empty_BUCKET(){
+    for(int i = -PMAX; i <= PMAX; i++)
+        BUCKET[i] = nullptr;
+}
+
+void LoadDistribution(CellDist &Distribution, Cell* CELL_array, int C){
+    for(int i = 1; i <= C; i++){
+        CELL_array[i].set_current_block(Distribution.get_ith_cell_current_block(i));
+    }
+}
+
 
 //VERSION 1 ver 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
@@ -527,8 +561,15 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
 
 //implementation of the code prior to Proposition 2
+//first empty_BUCEKT()
 void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
     //printf("BlockReinit start\n");
+
+    A.empty_BUCKET();
+    B.empty_BUCKET();
+
+    A.set_count_0();
+    B.set_count_0();
 
     A.CalculateDistribution(CELL_array);
     B.CalculateDistribution(CELL_array);
@@ -632,7 +673,9 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
 
     BaseCell->set_current_block(&T);
     F.add_size(-BaseCell->get_size());
+    F.decrease_cell_count();
     T.add_size(BaseCell->get_size());
+    T.increase_cell_count();
 
     for(auto i = BaseCell->net_list.begin(); i != BaseCell->net_list.end(); i++){
         if(F.Ldistribution[(*i)->get_net_num()] == 0){
