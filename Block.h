@@ -4,30 +4,6 @@
 #include "Cell.h"
 #include "Net.h"
 
-struct CellDist{
-    int* distribution;
-    int cutnet;
-    int ideal_balance;
-    int A_size, B_size;
-    int A_count, B_count;
-    Block* BlockA, * BlockB;
-    CellDist(int C, int _ideal_balance, int _cutnet, int _A_size, int _B_size, int _A_count, int _B_count, Block* _BlockA, Block* _BlockB) 
-        : ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(_A_count), B_count(_B_count), BlockA(_BlockA), BlockB(_BlockB) {
-        distribution = new int[C + 1];
-    }
-    bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet);
-    void writeCellDist(Cell* CELL_array, int C);
-    Block* get_ith_cell_current_block(int i){
-        if(distribution[i] == 1)
-            return BlockA;
-        else
-            return BlockB;
-    }
-    ~CellDist() {
-        delete[] distribution;
-    }
-};
-
 class Block{
 public:
     int* Fdistribution, * Ldistribution;
@@ -77,6 +53,7 @@ public:
     void decrease_cell_count() { cell_count--; }
     int get_size() { return size; }
     int get_cell_count() { return cell_count; }
+    void set_size(int _size) { size = _size; }
     ~Block(){
         delete[] (BUCKET - PMAX);
         delete[] Fdistribution; //Free Distribution
@@ -95,14 +72,13 @@ private:
     const double R;
 };
 
-void LoadDistribution(CellDist &Distribution, Cell* CELL_array, int C);
-
 //VERSION1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
 
 //VERSION 2 Ver3
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver3);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell(Block &A, Block &B, double r); //r is a balance factor

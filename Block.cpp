@@ -15,46 +15,7 @@ std::stack<Cell*> FreeCellList;
 
 //Using CellNode to record the best distribution
 
-bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet){
-    if(_cutnet > cutnet)
-        return false;
-    
-    if((_cutnet == cutnet) && (std::abs(_A_size - ideal_balance) > std::abs(A_size - ideal_balance)))
-        return false;
-    
-    for(int i = 1; i <= C; i++){
-        if(CELL_array[i].get_current_block() == BlockA)
-            distribution[i] = 1;
-        else
-            distribution[i] = 0;
-    }
 
-    A_size = _A_size;
-    B_size = _B_size;
-    A_count = _A_count;
-    B_count = _B_count;
-    cutnet = _cutnet;
-
-    return true;
-}
-
-void CellDist::writeCellDist(Cell* CELL_array, int C){
-    std::string filePath = "output.part";
-    std::ofstream writeFile(filePath.data());
-
-    if(writeFile.is_open()){
-        for(int i = 1; i <= C; i++){
-            writeFile << CELL_array[i].get_cell_name() << " ";
-
-            if(CELL_array[i].get_current_block() == BlockA)
-                writeFile << "1" << std::endl;
-            else
-                writeFile << "0" << std::endl;
-        }
-
-        writeFile.close();
-    }
-}
 
 void Block::CalculateDistribution(Cell* CELL_array){
     //printf("CalDist start\n");
@@ -379,13 +340,6 @@ void Block::empty_BUCKET(){
         BUCKET[i] = nullptr;
 }
 
-void LoadDistribution(CellDist &Distribution, Cell* CELL_array, int C){
-    for(int i = 1; i <= C; i++){
-        CELL_array[i].set_current_block(Distribution.get_ith_cell_current_block(i));
-    }
-}
-
-
 //VERSION 1 ver 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
@@ -412,7 +366,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         printf("Error on BlockInitialization");
 }
 
-/*
+
 //ver2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
@@ -477,10 +431,10 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
     delete[] NET_check_array;
 }
-*/
+
 
 //BlockInitialization ver3
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver3){
     std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
     bool check = true;
@@ -585,6 +539,9 @@ void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
         A.CellGainInitialization(B, *ctemp);
         B.CellGainInitialization(A, *ctemp);
     }
+
+    A.adjust_maxgain();
+    B.adjust_maxgain();
 
     //printf("BlockReinit end\n");
 }
