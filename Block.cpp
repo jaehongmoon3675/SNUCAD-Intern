@@ -31,9 +31,6 @@ void Block::CalculateDistribution(Cell* CELL_array){
         }
     }
 
-    for(int i = 1; i <= C; i++)
-        cell_count += Fdistribution[i];
-
     //printf("CalDist end\n");
 }
 void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implementation of the code prior to Proposition 2
@@ -252,6 +249,16 @@ Cell* Block::find_cell_in_block(Net* net){
 
     printf("NO Cell Error in Block::find_cell_in_block\n");
     return nullptr;
+}
+
+int Block::get_cell_num(Cell* Cell_array, int C){
+    int cell_num = 0;
+
+    for(int i = 1; i <= C; i++)
+        if(Cell_array[i].get_current_block() == this)
+            cell_num++;
+        
+    return cell_num;
 }
 
 void Block::print_Block(Cell* CELL_array){
@@ -522,9 +529,6 @@ void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
     A.empty_BUCKET();
     B.empty_BUCKET();
 
-    A.set_count_0();
-    B.set_count_0();
-
     A.CalculateDistribution(CELL_array);
     B.CalculateDistribution(CELL_array);
     
@@ -630,9 +634,7 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
 
     BaseCell->set_current_block(&T);
     F.add_size(-BaseCell->get_size());
-    F.decrease_cell_count();
     T.add_size(BaseCell->get_size());
-    T.increase_cell_count();
 
     for(auto i = BaseCell->net_list.begin(); i != BaseCell->net_list.end(); i++){
         if(F.Ldistribution[(*i)->get_net_num()] == 0){

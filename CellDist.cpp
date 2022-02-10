@@ -11,7 +11,7 @@
 #include "Block.h"
 #include "CellDist.h"
 
-bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet){
+bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet){
     if(_cutnet > cutnet)
         return false;
     
@@ -27,14 +27,14 @@ bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_
 
     A_size = _A_size;
     B_size = _B_size;
-    A_count = _A_count;
-    B_count = _B_count;
+    A_count = BlockA->get_cell_num(CELL_array, C);
+    B_count = BlockB->get_cell_num(CELL_array, C);
     cutnet = _cutnet;
 
     return true;
 }
 
-void CellDist::overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet){
+void CellDist::overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet){
     for(int i = 1; i <= C; i++){
         if(CELL_array[i].get_current_block() == BlockA)
             distribution[i] = 1;
@@ -44,8 +44,8 @@ void CellDist::overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int 
 
     A_size = _A_size;
     B_size = _B_size;
-    A_count = _A_count;
-    B_count = _B_count;
+    A_count = BlockA->get_cell_num(CELL_array, C);
+    B_count = BlockB->get_cell_num(CELL_array, C);
     cutnet = _cutnet;
 
     return;

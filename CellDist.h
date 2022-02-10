@@ -7,12 +7,12 @@
 
 class CellDist{
 public:
-    CellDist(int C, int _ideal_balance, int _cutnet, int _A_size, int _B_size, int _A_count, int _B_count, Block* _BlockA, Block* _BlockB) 
-        : ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(_A_count), B_count(_B_count), BlockA(_BlockA), BlockB(_BlockB) {
+    CellDist(int C, int _ideal_balance, int _cutnet, int _A_size, int _B_size, Block* _BlockA, Block* _BlockB) 
+        : ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(0), B_count(0), BlockA(_BlockA), BlockB(_BlockB) {
         distribution = new int[C + 1];
     }
-    bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet);
-    void overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _A_count, int _B_count, int _cutnet);
+    bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet);
+    void overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet);
     void writeCellDist(Cell* CELL_array, int C) const;
     void printCellDist() const;
     int get_A_size() const { return A_size; }

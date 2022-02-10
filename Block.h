@@ -10,7 +10,7 @@ public:
     int* gain;
 
     Block(int init_pmax, double low_bound, double up_bound, int c, int n, int w, double r, std::string block_name)
-        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), cell_count(0), C(c), N(n), W(w), R(r), size(0), name(block_name) {
+        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), size(0), name(block_name) {
         BUCKET = new Cell*[2 * PMAX + 1];
         
         for(int i = 0; i < 2 * PMAX + 1; i++)
@@ -45,14 +45,11 @@ public:
     void print_Block(Cell* CELL_array);
     void print_Block_short(Cell* CELL_array);
     void empty_BUCKET();
-    void set_count_0(){ cell_count = 0; }
+    int get_cell_num(Cell* CELL_array, int C);
     int ith_net_distribution(int i){
         return Fdistribution[i] + Ldistribution[i];
     }
-    void increase_cell_count() { cell_count++; }
-    void decrease_cell_count() { cell_count--; }
     int get_size() { return size; }
-    int get_cell_count() { return cell_count; }
     void set_size(int _size) { size = _size; }
     ~Block(){
         delete[] (BUCKET - PMAX);
@@ -66,7 +63,6 @@ private:
     int max_gain;
     double lbound, ubound;
     int size;
-    int cell_count;
     std::string name;
     const int C, N, W;
     const double R;

@@ -17,7 +17,7 @@ int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    int pass = 10; //how many pass we go through
+    int pass = 100; //how many pass we go through
     int k = 1;
     int InitVer = 2;
     int min_cutnet;
@@ -80,8 +80,8 @@ int main(){
     min_cutnet = CountCutNet(A, NET_array, N);
     cutnet = min_cutnet;
 
-    CellDist GlobalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), &A, &B);
-    CellDist LocalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), &A, &B);
+    CellDist GlobalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
+    CellDist LocalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
 
     printf("initial cutnet num: %d\n", min_cutnet);
     
@@ -134,21 +134,28 @@ int main(){
             */
             //printf("move!\n");
             
-            if(GlobalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), cutnet)){
+            if(GlobalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet)){
                 //printf("cutnet update: %d\n", min_cutnet);
                 min_cutnet = cutnet;
                 //printf("pass: %d\n", i);
                 //stuck = false;
             }
 
+            
+            
             if(pass_start){
-                LocalMinDist.overWrite(CELL_array, C, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), cutnet);    
+                LocalMinDist.overWrite(CELL_array, C, A.get_size(), B.get_size(), cutnet);    
                 pass_start = false;
             }
             else{
-                if(LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), A.get_cell_count(), B.get_cell_count(), cutnet))
+                //if((i/5) % 4 != 0 && cutnet >= min_cutnet){
+                if((i/4) % 9 != 0 && cutnet >= min_cutnet){
+
+                }
+                else if(LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet))
                     stuck = false;
             }
+            
             //printf("expected: %d, real: %d\n", cutnet, CountCutNet(A, NET_array, N));
             assert(CountCutNet(A, NET_array, N) == cutnet);
             //printf("num of cutnet: %d\n", temp);
