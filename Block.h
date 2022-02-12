@@ -41,7 +41,8 @@ public:
     void increase_cell_gain_of_net(Net* net);
     void decrease_cell_gain_of_net(Net* net);
     Cell* find_cell_in_block(Net* net);
-    bool push_Cell(Cell* cell); //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
+    bool push_Cell_ub(Cell* cell); //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
+    bool push_Cell_r(Cell* cell); //cell을 추가하였을 때 size가 ubound를 넘지 않으면 push하고 true를 반환, 아니면 false 반환
     void print_Block(Cell* CELL_array);
     void print_Block_short(Cell* CELL_array);
     void empty_BUCKET();
@@ -77,7 +78,8 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver3);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
-Cell* ChooseBaseCell(Block &A, Block &B, double r); //r is a balance factor
+Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor
+Cell* ChooseBaseCell_balance(Block &A, Block &B, double r); //r is a balance factor
 
 //implementation of the code prior to Proposition 2
 void BlockReinitialization(Block &A, Block &B, Cell* CELL_array);

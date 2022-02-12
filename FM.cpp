@@ -17,16 +17,17 @@ int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    int pass = 100; //how many pass we go through
+    int pass = 5; //how many pass we go through
     int k = 1;
     int InitVer = 2;
     int min_cutnet;
     int cutnet;
     bool balance_option = false; //true면 smax 기반, false면 비율 기반
+    bool time_check = false;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
-    clock_t start, end;
+    clock_t start, end, move_time, reinit_time;
     double total_time;
 
     start = clock();
@@ -100,18 +101,29 @@ int main(){
 
     Cell* BaseCell = nullptr;
     int temp;
-    int move_count = 1;
+    int move_count = 0;
 
     bool pass_start = true;
     bool stuck = false;
+    printf("FM start\n");
+
+    if(time_check){
+        end = clock();
+        total_time = (double)end - start;
+        printf("time: %fs\n\n", total_time / CLOCKS_PER_SEC);
+
+        move_time = clock();
+        reinit_time = clock();
+    }
 
     for(int i = 0; i < pass; i++){
-        BaseCell = ChooseBaseCell(A, B, r);
+        BaseCell = ChooseBaseCell_gain(A, B, r);
         //printf("Pass %d starts\n", i);
         //BaseCell->print_Cell();
 
         pass_start = true;
         stuck = false;
+        move_count = 0;
 
         while(BaseCell != nullptr){
             if(BaseCell->get_current_block() == &A){
@@ -121,6 +133,17 @@ int main(){
             else{
                 cutnet -= B.gain[BaseCell->get_cell_num()];
                 MoveCell(B, A, BaseCell);
+            }
+            
+            if(time_check){
+                if(move_count % 10000 == 5000){
+                    total_time = clock() - (double)move_time;
+                    move_time = clock();
+                    printf("move time: %fs\n\n", total_time / CLOCKS_PER_SEC);
+
+                    clock_t move_time = clock();
+                }
+                move_count++;
             }
 
             /*
@@ -148,19 +171,25 @@ int main(){
                 pass_start = false;
             }
             else{
-                //if((i/5) % 4 != 0 && cutnet >= min_cutnet){
-                if((i/4) % 9 != 0 && cutnet >= min_cutnet){
+                /*
+                if((i/5) % 4 != 0 && cutnet >= min_cutnet){
+                //if((i/8) % 10 != 0 && cutnet >= min_cutnet){
 
                 }
                 else if(LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet))
                     stuck = false;
+                */
+
+                if(LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet))
+                    stuck = false;
+                
             }
             
             //printf("expected: %d, real: %d\n", cutnet, CountCutNet(A, NET_array, N));
             assert(CountCutNet(A, NET_array, N) == cutnet);
             //printf("num of cutnet: %d\n", temp);
 
-            BaseCell = ChooseBaseCell(A, B, r);
+            BaseCell = ChooseBaseCell_gain(A, B, r);
             /*
             if(BaseCell != nullptr)
                 BaseCell->print_Cell();
@@ -173,10 +202,20 @@ int main(){
             break;
         }
 
-        
-        //printf("Pass %d finished\n", i);
-        LoadDistribution(LocalMinDist, CELL_array, C, cutnet);
-        BlockReinitialization(A, B, CELL_array);
+        if(time_check){  
+            printf("Pass %d finished, Total move: %d\n", i, move_count);
+            printf("min cutnet: %d\n", min_cutnet);
+            total_time = clock() - (double)end;
+            end = clock();
+            printf("time: %fs\n\n", total_time / CLOCKS_PER_SEC);
+
+            reinit_time = clock();
+            LoadDistribution(LocalMinDist, CELL_array, C, cutnet);
+            BlockReinitialization(A, B, CELL_array);
+            total_time = clock() - (double)reinit_time;
+            move_time = clock();
+            printf("reinit time: %fs\n", total_time / CLOCKS_PER_SEC);
+        }
         /*
         printf("After Pass %d...", i + 1);
         printf("Block A\n");
