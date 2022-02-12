@@ -148,8 +148,8 @@ int main(){
                 pass_start = false;
             }
             else{
-                //if((i/5) % 4 != 0 && cutnet >= min_cutnet){
-                if((i/4) % 9 != 0 && cutnet >= min_cutnet){
+                if((i/5) % 4 != 0 && cutnet >= min_cutnet){
+                //if((i/8) % 3 != 0 && cutnet >= min_cutnet){
 
                 }
                 else if(LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet))
