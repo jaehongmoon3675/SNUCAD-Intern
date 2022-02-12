@@ -71,7 +71,7 @@ int main(){
     int move_count = 1;
 
     for(int i = 0; i < pass; i++){
-        BaseCell = ChooseBaseCell(A, B, r);
+        BaseCell = ChooseBaseCell_gain(A, B, r);
         //BaseCell->print_Cell();
 
         while(BaseCell != nullptr){
@@ -100,7 +100,7 @@ int main(){
                 //printf("min chagne: %d\n", temp);
                 write_output(A, CELL_array, C);
             }
-            BaseCell = ChooseBaseCell(A, B, r);
+            BaseCell = ChooseBaseCell_gain(A, B, r);
             /*
             if(BaseCell != nullptr)
                 BaseCell->print_Cell();
