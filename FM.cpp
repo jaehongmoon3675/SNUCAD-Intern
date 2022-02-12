@@ -17,13 +17,14 @@ int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    int pass = 5; //how many pass we go through
-    int k = 1;
-    int InitVer = 2;
+    const int pass = 100; //how many pass we go through
+    const int k = 1;
+    const int InitVer = 2;
     int min_cutnet;
     int cutnet;
-    bool balance_option = false; //true면 smax 기반, false면 비율 기반
-    bool time_check = false;
+    const int stuck_criteria = 5;
+    const bool balance_option = false; //true면 smax 기반, false면 비율 기반
+    const bool time_check = false;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
@@ -102,9 +103,11 @@ int main(){
     Cell* BaseCell = nullptr;
     int temp;
     int move_count = 0;
+    int stuck_count = 0;
+    bool stuck_check = true;
+    bool stuck = false;
 
     bool pass_start = true;
-    bool stuck = false;
     printf("FM start\n");
 
     if(time_check){
@@ -117,12 +120,15 @@ int main(){
     }
 
     for(int i = 0; i < pass; i++){
-        BaseCell = ChooseBaseCell_gain(A, B, r);
+        if(!stuck)
+            BaseCell = ChooseBaseCell_gain(A, B, r);
+        else
+            BaseCell = ChooseBaseCell_balance(A, B, r);
         //printf("Pass %d starts\n", i);
         //BaseCell->print_Cell();
 
         pass_start = true;
-        stuck = false;
+        stuck_check = true;
         move_count = 0;
 
         while(BaseCell != nullptr){
@@ -160,6 +166,7 @@ int main(){
             if(GlobalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet)){
                 //printf("cutnet update: %d\n", min_cutnet);
                 min_cutnet = cutnet;
+                stuck_check = false;
                 //printf("pass: %d\n", i);
                 //stuck = false;
             }
@@ -180,26 +187,22 @@ int main(){
                     stuck = false;
                 */
 
-                if(LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet))
-                    stuck = false;
-                
+                LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet);        
             }
             
             //printf("expected: %d, real: %d\n", cutnet, CountCutNet(A, NET_array, N));
             assert(CountCutNet(A, NET_array, N) == cutnet);
             //printf("num of cutnet: %d\n", temp);
 
-            BaseCell = ChooseBaseCell_gain(A, B, r);
+            if(!stuck)
+                BaseCell = ChooseBaseCell_gain(A, B, r);
+            else
+                BaseCell = ChooseBaseCell_balance(A, B, r);
             /*
             if(BaseCell != nullptr)
                 BaseCell->print_Cell();
             */
             //printf("go on...!\n");
-        }
-
-        if(stuck){
-            printf("stuck!\n");
-            break;
         }
 
         if(time_check){  
@@ -210,12 +213,29 @@ int main(){
             printf("time: %fs\n\n", total_time / CLOCKS_PER_SEC);
 
             reinit_time = clock();
-            LoadDistribution(LocalMinDist, CELL_array, C, cutnet);
-            BlockReinitialization(A, B, CELL_array);
+        }
+
+        LoadDistribution(LocalMinDist, CELL_array, C, cutnet);
+        BlockReinitialization(A, B, CELL_array);
+
+        if(time_check){
             total_time = clock() - (double)reinit_time;
             move_time = clock();
             printf("reinit time: %fs\n", total_time / CLOCKS_PER_SEC);
         }
+
+        if(!stuck && stuck_check)
+            stuck_count++;
+        
+        if(stuck)
+            stuck_count--;
+
+        if(stuck_count == stuck_criteria)
+            stuck = true;
+        
+        if(stuck_count == 0)
+            stuck = false;
+
         /*
         printf("After Pass %d...", i + 1);
         printf("Block A\n");
