@@ -13,11 +13,11 @@
 #include "CellDist.h"
 #include "WriteFile.h"
 
-int main(){
+int main(int argc, char ** argv){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    const int pass = 50; //how many pass we go through
+    const int pass = 1; //how many pass we go through
     const int k = 1;
     const int InitVer = 2;
     int global_min_cutnet, local_min_cutnet;
@@ -121,6 +121,9 @@ int main(){
         reinit_time = clock();
     }
 
+    double move_min = 5, move_max = 0;
+    int move_max_loc = 0;
+
     for(int i = 0; i < pass; i++){
         if(!stuck)
             BaseCell = ChooseBaseCell_gain(A, B, r);
@@ -133,7 +136,10 @@ int main(){
         stuck_check = true;
         move_count = 0;
 
+        
+
         while(BaseCell != nullptr){
+            clock_t Move_time = clock();
             if(BaseCell->get_current_block() == &A){
                 cutnet -= A.gain[BaseCell->get_cell_num()];
                 MoveCell(A, B, BaseCell);
@@ -142,7 +148,21 @@ int main(){
                 cutnet -= B.gain[BaseCell->get_cell_num()];
                 MoveCell(B, A, BaseCell);
             }
+
+            double temp = clock() - (double)Move_time;
+
+            if(move_max < temp){
+                move_max = temp;
+                move_max_loc = move_count;
+            }
+
+            if(move_count == 1960)
+                printf("hello\n");
+
             
+            if(temp < move_min)
+                move_min = temp;
+
             if(time_option){
                 if(move_count % 10000 == 5000){
                     total_time = clock() - (double)move_time;
@@ -262,6 +282,9 @@ int main(){
     printf("\nBlock B\n");
     B.print_Block(CELL_array);
     */
+
+    printf("Move time min: %f, Move time max: %f\n", move_min, move_max);
+    printf("Move max loc: %d\n", move_max_loc);
 
 
     printf("\n---------- After FM Algorithm----------\n");
