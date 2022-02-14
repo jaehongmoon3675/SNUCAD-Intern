@@ -52,6 +52,13 @@ public:
     }
     int get_size() { return size; }
     void set_size(int _size) { size = _size; }
+    void deactivate_large_net(Net* NET_array);
+    bool get_balance(){
+        if(std::abs(size - R*W) < std::abs(ubound - R*W) / 2)
+            return true;
+        else
+            return false;
+    }
     ~Block(){
         delete[] (BUCKET - PMAX);
         delete[] Fdistribution; //Free Distribution
@@ -79,10 +86,10 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor
-Cell* ChooseBaseCell_balance(Block &A, Block &B, double r); //r is a balance factor
+Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance); //r is a balance factor
 
 //implementation of the code prior to Proposition 2
-void BlockReinitialization(Block &A, Block &B, Cell* CELL_array);
+void BlockReinitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, bool no_large_net);
 
 void MoveCell(Block &F, Block &T, Cell* BaseCell);
 

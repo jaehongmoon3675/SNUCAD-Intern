@@ -33,6 +33,14 @@ void Block::CalculateDistribution(Cell* CELL_array){
 
     //printf("CalDist end\n");
 }
+
+void Block::deactivate_large_net(Net* NET_array){
+    for(int i = 1; i <= N; i++){
+        if(!NET_array[i].get_activate())
+            Ldistribution[i] = 1;
+    }
+}
+
 void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implementation of the code prior to Proposition 2
     //printf("CellGainAdjust start\n");
     
@@ -543,7 +551,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
 //implementation of the code prior to Proposition 2
 //first empty_BUCEKT()
-void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
+void BlockReinitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, bool no_large_net){
     //printf("BlockReinit start\n");
 
     A.empty_BUCKET();
@@ -551,7 +559,12 @@ void BlockReinitialization(Block &A, Block &B, Cell* CELL_array){
 
     A.CalculateDistribution(CELL_array);
     B.CalculateDistribution(CELL_array);
-    
+
+    //deactivate large net for performance
+    if(no_large_net){
+        A.deactivate_large_net(NET_array);
+        B.deactivate_large_net(NET_array);
+    }
     Cell *ctemp;
 
     while(!FreeCellList.empty()){
@@ -633,7 +646,7 @@ Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
     }
 }
 
-Cell* ChooseBaseCell_balance(Block &A, Block &B, double r){ //r is a balance factor
+Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance){ //r is a balance factor
     //printf("ChooseBaseCell start!\n");
 
     Cell* max_gain_cellA, * max_gain_cellB;
@@ -656,17 +669,33 @@ Cell* ChooseBaseCell_balance(Block &A, Block &B, double r){ //r is a balance fac
     }
     else{
         //std::cout << std::endl << "A: " << std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) << ", B: " << std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB)) <<std::endl;
-        if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) > std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){
-            FreeCellList.push(max_gain_cellA);
-            A.remove_from_BUCKET(max_gain_cellA);
-            //printf("choose cell in A2\n");
-            return max_gain_cellA;
+        if(destroy_balance){
+            if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) > std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){
+                FreeCellList.push(max_gain_cellA);
+                A.remove_from_BUCKET(max_gain_cellA);
+                //printf("choose cell in A2\n");
+                return max_gain_cellA;
+            }
+            else{
+                FreeCellList.push(max_gain_cellB);
+                B.remove_from_BUCKET(max_gain_cellB);
+                //printf("choose cell in B2\n");
+                return max_gain_cellB;
+            }
         }
         else{
-            FreeCellList.push(max_gain_cellB);
-            B.remove_from_BUCKET(max_gain_cellB);
-            //printf("choose cell in B2\n");
-            return max_gain_cellB;
+            if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) < std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){
+                FreeCellList.push(max_gain_cellA);
+                A.remove_from_BUCKET(max_gain_cellA);
+                //printf("choose cell in A2\n");
+                return max_gain_cellA;
+            }
+            else{
+                FreeCellList.push(max_gain_cellB);
+                B.remove_from_BUCKET(max_gain_cellB);
+                //printf("choose cell in B2\n");
+                return max_gain_cellB;
+            }
         }
     }
 }

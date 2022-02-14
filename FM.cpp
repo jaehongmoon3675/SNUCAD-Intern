@@ -1,4 +1,5 @@
 #define NDEBUG
+#define MAX_MOVE_TIME 10713
 
 #include <iostream>
 #include <cassert>
@@ -17,15 +18,17 @@ int main(int argc, char ** argv){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    const int pass = 1; //how many pass we go through
+    const int pass = 10; //how many pass we go through
     const int k = 1;
     const int InitVer = 2;
     int global_min_cutnet, local_min_cutnet;
     int cutnet;
-    const int stuck_criteria = 4;
+    const int stuck_criteria = 5;
+    const bool stuck_out_itr = 1;
     const bool balance_option = false; //true면 smax 기반, false면 비율 기반
-    const bool time_option = true;
+    const bool time_option = false;
     const bool stuck_option = true;
+    const bool no_large_net = false;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
@@ -42,8 +45,10 @@ int main(int argc, char ** argv){
     double balance_low_bound = 0, balance_up_bound = 0;
     get_max(C, CELL_array, pmax, smax);
 
+    int max_cell_count = get_max_cell_count(NET_array, N);
+
     printf("N: %d C: %d, P: %d, W: %d, R: %f\n", N, C, P, W, r);
-    printf("pmax: %d, smax: %d\n", pmax, smax);
+    printf("pmax: %d, smax: %d, max_cell_count: %d\n", pmax, smax, max_cell_count);
     //printf("balance ratio: %f, num of pass: %d, k: %d\n", r, pass, k);
 
     if(balance_option){
@@ -78,11 +83,16 @@ int main(int argc, char ** argv){
         BlockInitialization(A, B, CELL_array, NET_array, C, N, 0);
     }
 
-    BlockReinitialization(A, B, CELL_array);
+    BlockReinitialization(A, B, CELL_array, NET_array, false);
 
     global_min_cutnet = CountCutNet(A, NET_array, N);
     local_min_cutnet = global_min_cutnet;
     cutnet = global_min_cutnet;
+
+    if(no_large_net){
+        A.deactivate_large_net(NET_array);
+        B.deactivate_large_net(NET_array);
+    }
 
     CellDist GlobalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
     CellDist LocalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
@@ -106,8 +116,9 @@ int main(int argc, char ** argv){
     int temp;
     int move_count = 0;
     int stuck_count = 0;
-    bool stuck_check = true;
-    bool stuck = false;
+    bool stuck_check = true; //얼마나 오래동안 stuck 되었는지를 체크하기 위함
+    bool stuck = false; //실제 stuck 되어있는지 여부
+    bool destroy_balance = false;
 
     bool pass_start = true;
     printf("FM start\n");
@@ -127,19 +138,18 @@ int main(int argc, char ** argv){
     for(int i = 0; i < pass; i++){
         if(!stuck)
             BaseCell = ChooseBaseCell_gain(A, B, r);
-        else
-            BaseCell = ChooseBaseCell_balance(A, B, r);
+        else{
+            BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
+        }
         //printf("Pass %d starts\n", i);
         //BaseCell->print_Cell();
 
         pass_start = true;
-        stuck_check = true;
-        move_count = 0;
-
-        
+        stuck_check = true;        
 
         while(BaseCell != nullptr){
             clock_t Move_time = clock();
+
             if(BaseCell->get_current_block() == &A){
                 cutnet -= A.gain[BaseCell->get_cell_num()];
                 MoveCell(A, B, BaseCell);
@@ -156,10 +166,11 @@ int main(int argc, char ** argv){
                 move_max_loc = move_count;
             }
 
-            if(move_count == 1960)
-                printf("hello\n");
+            /*
+            if(move_count == MAX_MOVE_TIME)
+                printf("MAX_MOVE_TIME %d: %f\n\n", MAX_MOVE_TIME, temp);
+            */
 
-            
             if(temp < move_min)
                 move_min = temp;
 
@@ -167,6 +178,7 @@ int main(int argc, char ** argv){
                 if(move_count % 10000 == 5000){
                     total_time = clock() - (double)move_time;
                     move_time = clock();
+
                     printf("move time: %fs\n\n", total_time / CLOCKS_PER_SEC);
 
                     clock_t move_time = clock();
@@ -189,6 +201,7 @@ int main(int argc, char ** argv){
                 //printf("cutnet update: %d\n", global_min_cutnet);
                 global_min_cutnet = cutnet;
                 stuck_check = false;
+                //stuck = false;
                 //printf("pass: %d\n", i);
                 //stuck = false;
             }
@@ -221,8 +234,11 @@ int main(int argc, char ** argv){
 
             if(!stuck)
                 BaseCell = ChooseBaseCell_gain(A, B, r);
-            else
-                BaseCell = ChooseBaseCell_balance(A, B, r);
+            else{
+                //destroy_balance = !A.get_balance();
+                //destroy_balance = true;
+                BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
+            }
             /*
             if(BaseCell != nullptr)
                 BaseCell->print_Cell();
@@ -241,7 +257,7 @@ int main(int argc, char ** argv){
         }
 
         LoadDistribution(LocalMinDist, CELL_array, C, cutnet);
-        BlockReinitialization(A, B, CELL_array);
+        BlockReinitialization(A, B, CELL_array, NET_array, no_large_net);
 
         if(time_option){
             total_time = clock() - (double)reinit_time;
@@ -258,6 +274,9 @@ int main(int argc, char ** argv){
         if(stuck_option){
             if(stuck_count == stuck_criteria){
                 stuck = true;
+                stuck_count *= stuck_out_itr;
+                destroy_balance = !A.get_balance();
+                destroy_balance = true;
             }
         }
 
@@ -295,7 +314,7 @@ int main(int argc, char ** argv){
 
     //printf("Final min num of cutnet: %d\n", global_min_cutnet);
 
-    Check(A, B, NET_array, N);
+    //Check(A, B, NET_array, N);
 
 
     delete[] NET_array;
