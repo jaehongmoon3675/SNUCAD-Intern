@@ -22,6 +22,8 @@ public:
         Ldistribution = new int[N + 1];
         gain = new int[C + 1];
     }
+    Block(const Block&);
+    bool operator==(const Block& compare) const;
     void CalculateDistribution(Cell* CELL_array);
     void CellGainInitialization(Block &T, Cell &c); //inner loop of implementation of the code prior to Proposition 2
     Cell* get_max_gain_cell() const;
@@ -89,7 +91,7 @@ Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor
 Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance); //r is a balance factor
 
 //implementation of the code prior to Proposition 2
-void BlockReinitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, bool no_large_net);
+void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET_array);
 
 void MoveCell(Block &F, Block &T, Cell* BaseCell);
 
