@@ -7,9 +7,26 @@
 
 class CellDist{
 public:
-    CellDist(int C, int _ideal_balance, int _cutnet, int _A_size, int _B_size, Block* _BlockA, Block* _BlockB) 
-        : ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(0), B_count(0), BlockA(_BlockA), BlockB(_BlockB) {
+    CellDist(int _C, int _N, int _ideal_balance, int _cutnet, int _A_size, int _B_size, Block* _BlockA, Block* _BlockB) 
+        : C(_C), N(_N), ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(0), B_count(0), BlockA(_BlockA), BlockB(_BlockB) {
+        distribution = new int[_C + 1];
+    }
+    CellDist(const CellDist& copy){
+        C = copy.C;
+        N = copy.N;
+        cutnet = copy.cutnet;
+        ideal_balance = copy.ideal_balance;
+        A_size = copy.A_size;
+        B_size = copy.B_size;
+        A_count = copy.A_count;
+        B_count = copy.B_count;
+        BlockA = copy.BlockA;
+        BlockB = copy.BlockB;
+        
         distribution = new int[C + 1];
+
+        for(int i = 1; i <= C; i++)
+            distribution[i] = copy.distribution[i];
     }
     bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet);
     void overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet);
@@ -33,6 +50,7 @@ public:
     }
 private:
     int* distribution;
+    int C, N;
     int cutnet;
     int ideal_balance;
     int A_size, B_size;

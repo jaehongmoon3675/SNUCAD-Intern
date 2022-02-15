@@ -14,6 +14,8 @@
 #include "CellDist.h"
 #include "WriteFile.h"
 
+int gain_update_count = 0;
+
 int main(int argc, char ** argv){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
@@ -26,13 +28,13 @@ int main(int argc, char ** argv){
     const int stuck_criteria = 5;
     const bool stuck_out_itr = 1;
     const bool balance_option = false; //true면 smax 기반, false면 비율 기반
-    const bool time_option = false;
+    const bool time_option = true;
     const bool stuck_option = true;
     const bool no_large_net = false;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
-    clock_t start, end, move_time, reinit_time;
+    clock_t start, end, move_time, reinit_time, Move_time;
     double total_time;
 
     start = clock();
@@ -94,8 +96,8 @@ int main(int argc, char ** argv){
         B.deactivate_large_net(NET_array);
     }
 
-    CellDist GlobalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
-    CellDist LocalMinDist(C, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
+    CellDist GlobalMinDist(C, N, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
+    CellDist LocalMinDist(C, N, W*r, cutnet, A.get_size(), B.get_size(), &A, &B);
 
     printf("initial cutnet num: %d\n", global_min_cutnet);
     
@@ -116,14 +118,15 @@ int main(int argc, char ** argv){
     int temp;
     int move_count = 0;
     int stuck_count = 0;
+    int gain_update_count_temp = 0;
     bool stuck_check = true; //얼마나 오래동안 stuck 되었는지를 체크하기 위함
     bool stuck = false; //실제 stuck 되어있는지 여부
     bool destroy_balance = false;
 
     bool pass_start = true;
-    printf("FM start\n");
 
     if(time_option){
+        printf("FM start\n");
         end = clock();
         total_time = (double)end - start;
         printf("time: %fs\n\n", total_time / CLOCKS_PER_SEC);
@@ -135,7 +138,12 @@ int main(int argc, char ** argv){
     double move_min = 5, move_max = 0;
     int move_max_loc = 0;
 
+    double record_time = 0;
+    clock_t record_time_temp;
+
     for(int i = 0; i < pass; i++){
+        record_time = 0;
+
         if(!stuck)
             BaseCell = ChooseBaseCell_gain(A, B, r);
         else{
@@ -148,7 +156,13 @@ int main(int argc, char ** argv){
         stuck_check = true;        
 
         while(BaseCell != nullptr){
-            clock_t Move_time = clock();
+            if(time_option)
+                Move_time = clock();
+
+            
+            if(move_count == 4475)
+                printf("hello\n");
+            
 
             if(BaseCell->get_current_block() == &A){
                 cutnet -= A.gain[BaseCell->get_cell_num()];
@@ -159,27 +173,31 @@ int main(int argc, char ** argv){
                 MoveCell(B, A, BaseCell);
             }
 
-            double temp = clock() - (double)Move_time;
+            if(time_option){
+                double temp = clock() - (double)Move_time;
 
-            if(move_max < temp){
-                move_max = temp;
-                move_max_loc = move_count;
+                if(move_max < temp){
+                    move_max = temp;
+                    move_max_loc = move_count;
+                }
+
+                /*
+                if(move_count == MAX_MOVE_TIME)
+                    printf("MAX_MOVE_TIME %d: %f\n\n", MAX_MOVE_TIME, temp);
+                */
+
+                if(temp < move_min)
+                    move_min = temp;
             }
-
-            /*
-            if(move_count == MAX_MOVE_TIME)
-                printf("MAX_MOVE_TIME %d: %f\n\n", MAX_MOVE_TIME, temp);
-            */
-
-            if(temp < move_min)
-                move_min = temp;
 
             if(time_option){
                 if(move_count % 10000 == 5000){
                     total_time = clock() - (double)move_time;
                     move_time = clock();
 
-                    printf("move time: %fs\n\n", total_time / CLOCKS_PER_SEC);
+                    printf("move time: %fs, gain_update: %d, record_time: %f\n", total_time / CLOCKS_PER_SEC, gain_update_count - gain_update_count_temp, record_time / CLOCKS_PER_SEC);
+                    record_time = 0;
+                    gain_update_count_temp = gain_update_count;
 
                     clock_t move_time = clock();
                 }
@@ -196,6 +214,9 @@ int main(int argc, char ** argv){
             printf("\n\n\n");
             */
             //printf("move!\n");
+
+            if(time_option)
+                record_time_temp = clock();
             
             if(GlobalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet)){
                 //printf("cutnet update: %d\n", global_min_cutnet);
@@ -204,9 +225,7 @@ int main(int argc, char ** argv){
                 //stuck = false;
                 //printf("pass: %d\n", i);
                 //stuck = false;
-            }
-
-            
+            }            
             
             if(pass_start){
                 LocalMinDist.overWrite(CELL_array, C, A.get_size(), B.get_size(), cutnet);    
@@ -227,10 +246,21 @@ int main(int argc, char ** argv){
 
                 LocalMinDist.update(CELL_array, C, A.get_size(), B.get_size(), cutnet);
             }
+
+            if(time_option){
+                record_time += (clock() - (double)record_time_temp);
+            }
             
             //printf("expected: %d, real: %d\n", cutnet, CountCutNet(A, NET_array, N));
-            assert(CountCutNet(A, NET_array, N) == cutnet);
+            //assert(CountCutNet(A, NET_array, N) == cutnet);
             //printf("num of cutnet: %d\n", temp);
+
+            
+            if(CountCutNet(A, NET_array, N) != cutnet){
+                printf("move_count: %d, cell_num%d\n", move_count, BaseCell->get_cell_num());
+                return 0;
+            }
+            
 
             if(!stuck)
                 BaseCell = ChooseBaseCell_gain(A, B, r);
@@ -251,8 +281,8 @@ int main(int argc, char ** argv){
             printf("min cutnet: %d\n", global_min_cutnet);
             total_time = clock() - (double)end;
             end = clock();
-            printf("time: %fs\n\n", total_time / CLOCKS_PER_SEC);
 
+            printf("time: %fs\n", total_time / CLOCKS_PER_SEC);
             reinit_time = clock();
         }
 
@@ -302,9 +332,10 @@ int main(int argc, char ** argv){
     B.print_Block(CELL_array);
     */
 
-    printf("Move time min: %f, Move time max: %f\n", move_min, move_max);
-    printf("Move max loc: %d\n", move_max_loc);
-
+    if(time_option){
+        printf("Move time min: %f, Move time max: %f\n", move_min, move_max);
+        printf("Move max loc: %d\n", move_max_loc);
+    }
 
     printf("\n---------- After FM Algorithm----------\n");
     

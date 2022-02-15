@@ -10,6 +10,8 @@
 #include "Block.h"
 #include "WriteFile.h"
 
+int gain_update_count = 0;
+
 extern std::stack<Cell*> FreeCellList;
 
 void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
@@ -25,11 +27,14 @@ void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
         for(int i = 1; i <= C; i++){
             readFile >> temp_cell_name >> block;
             
-            if(block == 1)
+            if(block == 1){
                 CELL_array[i].set_current_block(&A);
-            else
+                A.add_size(CELL_array[i].get_size());
+            }
+            else{
                 CELL_array[i].set_current_block(&B);
-
+                B.add_size(CELL_array[i].get_size());
+            }
             FreeCellList.push(CELL_array + i);
         }
 
@@ -65,7 +70,10 @@ int main(){
     Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "B");
 
     read_output_part(A, B, C, CELL_array);
-    BlockReinitialization(A, B, CELL_array);
+    BlockReinitialization(A, B, CELL_array, NET_array, false);
+
+    
+    printf("A size: %d, B size: %d\n", A.get_size(), B.get_size());
 
 
     printf("cutnet_num: %d\n", CountCutNet(A, NET_array, N));

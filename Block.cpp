@@ -12,6 +12,8 @@
 
 std::stack<Cell*> FreeCellList;
 
+extern int gain_update_count;
+
 
 //Using CellNode to record the best distribution
 
@@ -191,8 +193,8 @@ bool Block::push_Cell_r(Cell* cell){ //cell을 추가하였을 때 size가 uboun
 
 void Block::increase_cell_gain(Cell* cell){
     //printf("start increase_cell_gain\n");
-
     //printf("update Cell %d gain!\n", cell->get_cell_num());
+    gain_update_count++;
 
     if(cell->BUCKETpre == nullptr){
         //printf("no BUCKETpre\n");
@@ -228,6 +230,7 @@ void Block::increase_cell_gain(Cell* cell){
 
 void Block::decrease_cell_gain(Cell* cell){
     //printf("start decrease_cell_gain\n");
+    gain_update_count++;
 
     if(cell->BUCKETpre == nullptr){
         //printf("no BUCKETpre\n");
@@ -260,6 +263,8 @@ void Block::increase_cell_gain_of_net(Net* net){
     for(auto i = net->cell_list.begin(); i != net->cell_list.end(); i++)
         if((*i)->locked == false)
             increase_cell_gain(*i);
+        else
+            gain_update_count++;
     
 }
 
@@ -267,6 +272,8 @@ void Block::decrease_cell_gain_of_net(Net* net){
     for(auto i = net->cell_list.begin(); i != net->cell_list.end(); i++)
         if((*i)->locked == false)
             decrease_cell_gain(*i);
+        else
+            gain_update_count++;
 }
 
 Cell* Block::find_cell_in_block(Net* net){
