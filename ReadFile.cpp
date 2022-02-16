@@ -17,7 +17,6 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
     if(readFile.is_open()){
         char c;
         int temp_cell;
-        bool double_check;
 
         readFile >> N >> C;
         readFile.get(c);
@@ -29,21 +28,19 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
             CELL_array[i].set_cell_num(i);
 
         for(int i = 1; i <= N; i++){
-            std::vector<int> net_twice;
             do{ 
                 
                 readFile >> temp_cell;
-                double_check = false;
-                for(int j = 0; j < net_twice.size(); j++){
-                    if(net_twice[j] == temp_cell){
-                        double_check = true;
-                        continue;
-                    }
-                }
 
-                if(!double_check){
-                    
-                    net_twice.push_back(temp_cell);
+
+                if(!CELL_array[temp_cell].net_list.empty() && CELL_array[temp_cell].net_list.back()->get_net_num() != i){
+                    pin_num++;
+
+                    NET_array[i].set_net_num(i);
+                    NET_array[i].push_cell(CELL_array + temp_cell);
+                    CELL_array[temp_cell].push_net(NET_array + i);
+                }
+                else if(CELL_array[temp_cell].net_list.empty()){
                     pin_num++;
 
                     NET_array[i].set_net_num(i);
