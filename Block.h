@@ -62,6 +62,14 @@ public:
         else
             return false;
     }
+    int get_strict_balance(){
+        if(std::abs(size - R*W) < std::abs(ubound - R*W) / 4)
+            return 1;
+        else if(std::abs(size - R*W) > 3* std::abs(ubound - R*W) / 4)
+            return 0;
+        else
+            return -1;
+    }
     ~Block(){
         delete[] (BUCKET - PMAX);
         delete[] Fdistribution; //Free Distribution

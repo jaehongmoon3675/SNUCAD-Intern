@@ -139,16 +139,19 @@ void FM_pass(int C, int N, double r, Cell* CELL_array, Net* NET_array, Block &A,
             }
             */
 
-           if(stuck && move_count >= init_pass_start && A.get_balance() != destroy_balance){
+           //if(stuck && move_count >= init_pass_start / 2 && A.get_strict_balance() >= 0 && A.get_strict_balance() != destroy_balance){
+            if(stuck && move_count >= init_pass_start / 5 && A.get_balance() != destroy_balance){
                 min_cutnet = cutnet;
                 move_count_at_min = move_count;
                 break;
            }
 
-           if(move_count > C - C / 3){
+            
+           if(move_count > C - C / 4){
                move_count = 0;
                break;
            }
+           
         }
 
         printf("choose + move time: %fs, move_count_at_min: %d\n", (clock() - (double)choosemove_time_temp) / CLOCKS_PER_SEC, move_count_at_min);
@@ -181,8 +184,9 @@ void FM_pass(int C, int N, double r, Cell* CELL_array, Net* NET_array, Block &A,
 int main(int argc, char ** argv){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
-    double r = 0.5; //balance factor
-    const int pass = 30; //how many pass we go through
+    const double r = 0.5; //balance factor
+    const double pm_r = 0.05;
+    const int pass = 1000; //how many pass we go through
     const int k = 5;
     const int InitVer = 2;
     int global_min_cutnet, local_min_cutnet;
@@ -220,9 +224,9 @@ int main(int argc, char ** argv){
         balance_up_bound = r*W + smax * k;
     }
     else{
-        printf("balance ratio +- 0.05, num of pass: %d\n", pass);
-        balance_low_bound = (r - 0.05)*W;
-        balance_up_bound = (r + 0.05)*W;
+        printf("balance ratio +- %f, num of pass: %d\n", pm_r, pass);
+        balance_low_bound = (r - pm_r)*W;
+        balance_up_bound = (r + pm_r)*W;
     }
 
     printf("balance low bound: %f, balance up bound: %f\n", balance_low_bound, balance_up_bound);
@@ -297,7 +301,7 @@ int main(int argc, char ** argv){
         FM_pass(C, N, r, CELL_array, NET_array, A, B, stuck, LocalMinDist);
 
         if(stuck_option){
-            if(!stuck && (cutnet == LocalMinDist.get_cutnet()))
+            if(!stuck && (GlobalMinDist.get_cutnet() <= LocalMinDist.get_cutnet()))
                 stuck_count++;
         
             if(stuck)
@@ -317,9 +321,11 @@ int main(int argc, char ** argv){
         }
 
         
-        if(GlobalMinDist.get_cutnet() > LocalMinDist.get_cutnet())
+        if(GlobalMinDist.get_cutnet() > LocalMinDist.get_cutnet()){
             GlobalMinDist = LocalMinDist;
-
+            stuck_count = 0;
+            stuck = false;
+        }
         //assert(CountCutNet(A, NET_array, N) == cutnet);
 
         printf("pass %d end, cutnet: %d, running time: %fs\n", i, LocalMinDist.get_cutnet(), (clock() - (double)pass_time_temp) / CLOCKS_PER_SEC);
