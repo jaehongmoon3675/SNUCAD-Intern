@@ -38,12 +38,12 @@ void FM_pass(int C, int N, double r, Cell* CELL_array, Net* NET_array, Block &A,
 
     const bool destroy_balance = A.get_balance();
     //bool destroy_balance = true;
-    /*
+    
     if(destroy_balance)
         printf("Destroy...!\n");
     else
         printf("balance\n");      
-    */
+    
     clock_t choosemove_time_temp, reinit_time_temp, choose_time_temp, move_time_temp;
     double choose_time = 0, move_time = 0;
     double get_max_gain_cell_time_temp;
@@ -101,6 +101,7 @@ void FM_pass(int C, int N, double r, Cell* CELL_array, Net* NET_array, Block &A,
                 if(!review){              
                     min_cutnet = cutnet;
                     move_count_at_min = move_count;
+                    //printf("%d ", move_count_at_min);
                     A_size_at_min = A.get_size();
                 }
                 pass_start--;
@@ -138,11 +139,13 @@ void FM_pass(int C, int N, double r, Cell* CELL_array, Net* NET_array, Block &A,
             }
             */
 
-           if(stuck && A.get_balance() != destroy_balance){
+           if(stuck && move_count >= init_pass_start && A.get_balance() != destroy_balance){
+                min_cutnet = cutnet;
+                move_count_at_min = move_count;
                 break;
            }
 
-           if(move_count > C /2){
+           if(move_count > C - C / 3){
                move_count = 0;
                break;
            }
@@ -309,6 +312,8 @@ int main(int argc, char ** argv){
 
             if(stuck_count == 0)
                 stuck = false;
+            
+            printf("\nstuck_count: %d\n", stuck_count);
         }
 
         
@@ -317,7 +322,7 @@ int main(int argc, char ** argv){
 
         //assert(CountCutNet(A, NET_array, N) == cutnet);
 
-        printf("pass %d end, cutnet: %d, running time: %fs\n", i, GlobalMinDist.get_cutnet(), (clock() - (double)pass_time_temp) / CLOCKS_PER_SEC);
+        printf("pass %d end, cutnet: %d, running time: %fs\n", i, LocalMinDist.get_cutnet(), (clock() - (double)pass_time_temp) / CLOCKS_PER_SEC);
         printf("A size: %d, B size: %d\n", LocalMinDist.get_A_size(), LocalMinDist.get_B_size());
     }
 
