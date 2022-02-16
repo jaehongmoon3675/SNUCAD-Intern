@@ -1,6 +1,7 @@
 #define NDEBUG
 
 #include <iostream>
+#include <ctime>
 #include <cassert>
 #include <fstream>
 #include <cmath>
@@ -9,6 +10,7 @@
 #include <stack>
 #include <queue>
 
+
 #include "Cell.h"
 #include "Net.h"
 #include "Block.h"
@@ -16,6 +18,7 @@
 std::stack<Cell*> FreeCellList;
 
 extern int gain_update_count;
+double get_max_gain_cell_time = 0;
 
 
 //Using CellNode to record the best distribution
@@ -157,15 +160,18 @@ Cell* Block::get_max_gain_cell() const{
         max_gain_cell = max_gain_cell ->BUCKETnext;
 
         if(max_gain_cell == nullptr){
+            //return nullptr;
+            
             i--;
             
             if(i < -PMAX)
-                break;
+                return nullptr;
 
             if(BUCKET[i] == nullptr)
                 break;
             else
                 max_gain_cell = BUCKET[i];
+            
         }
     }while(BUCKET[i] != nullptr);
 
@@ -477,6 +483,8 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     //bool alter = true;
     //Block* current_block = &A;
 
+    
+
     bool* NET_check_array = new bool[N + 1];
 
     for(int i = 1; i <= N; i++)
@@ -621,23 +629,17 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET_array){
     //printf("BlockReinit start\n");
 
-    while(!FreeCellList.empty())
-        FreeCellList.pop();
-
     A.empty_BUCKET();
     B.empty_BUCKET();
 
-    for(int i = 1; i <= C; i++)
-        FreeCellList.push(CELL_array + i);
 
     A.CalculateDistribution(CELL_array);
     B.CalculateDistribution(CELL_array);
 
     Cell *ctemp;
 
-    while(!FreeCellList.empty()){
-        ctemp = FreeCellList.top();
-        FreeCellList.pop();
+    for(int i = 1; i <= C; i++){
+        ctemp = CELL_array + i;
 
         ctemp->locked = false;
 
@@ -656,9 +658,13 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
     //printf("ChooseBaseCell start!\n");
 
+    clock_t get_max_gain_cell_time_temp = clock();
     Cell* max_gain_cellA, * max_gain_cellB;
     max_gain_cellA = A.get_max_gain_cell();
     max_gain_cellB = B.get_max_gain_cell();
+
+    get_max_gain_cell_time += (clock() - (double)get_max_gain_cell_time_temp);
+
 
     if(max_gain_cellA == nullptr && max_gain_cellB == nullptr)
         return nullptr;

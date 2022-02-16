@@ -52,6 +52,7 @@ public:
     int ith_net_distribution(int i){
         return Fdistribution[i] + Ldistribution[i];
     }
+    int get_W() { return W; }
     int get_size() { return size; }
     void set_size(int _size) { size = _size; }
     void deactivate_large_net(Net* NET_array);

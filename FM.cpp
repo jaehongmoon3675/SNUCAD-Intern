@@ -1,4 +1,4 @@
-//#define NDEBUG
+#define NDEBUG
 #define MAX_MOVE_TIME 10713
 
 #include <iostream>
@@ -15,12 +15,15 @@
 #include "WriteFile.h"
 
 int gain_update_count = 0;
+extern double get_max_gain_cell_time;
 
 //stuck check에 유의
-void FM_pass(int C, int N, int r, Cell* CELL_array, Net* NET_array, Block &A, Block &B, const bool stuck, CellDist& LocalMinDist){
+void FM_pass(int C, int N, double r, Cell* CELL_array, Net* NET_array, Block &A, Block &B, const bool stuck, CellDist& LocalMinDist){
     Cell* BaseCell = nullptr;
     bool review = false;
+    int init_pass_start = C / 100;
     int move_count = 0, move_count_at_min = 1;
+    int A_size_at_min = A.get_size();
     int min_cutnet, cutnet;
 
     min_cutnet = LocalMinDist.get_cutnet();
@@ -28,28 +31,49 @@ void FM_pass(int C, int N, int r, Cell* CELL_array, Net* NET_array, Block &A, Bl
     //Block TempA = A;
     //Block TempB = B;
 
-    //bool destroy_balance = !A.get_balance();
-    bool destroy_balance = true;
+    if(stuck)
+        printf("stuck!\n");
+    else
+        printf("not stuck!\n");
 
-    bool pass_start = true;      
+    const bool destroy_balance = A.get_balance();
+    //bool destroy_balance = true;
+    /*
+    if(destroy_balance)
+        printf("Destroy...!\n");
+    else
+        printf("balance\n");      
+    */
+    clock_t choosemove_time_temp, reinit_time_temp, choose_time_temp, move_time_temp;
+    double choose_time = 0, move_time = 0;
+    double get_max_gain_cell_time_temp;
 
-    do{
+    do{ 
+        int pass_start = init_pass_start; //계속해서 초기화 시켜여줘야함에 유의!
         cutnet = LocalMinDist.get_cutnet();
         //printf("----------------------------");
 
         //assert(TempA == A);
         //assert(TempB == B);
-        
+        choose_time = 0, move_time = 0;
 
+        choosemove_time_temp = clock();
+
+        get_max_gain_cell_time_temp = get_max_gain_cell_time;
+        
+        choose_time_temp = clock();
         if(!stuck)
             BaseCell = ChooseBaseCell_gain(A, B, r);
+            //BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
         else{
             BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
         }
+        choose_time += (clock() - (double)choose_time_temp);
 
         while(BaseCell != nullptr){        
             //A.print_Block(CELL_array);
             //B.print_Block(CELL_array);
+            move_time_temp = clock();
             if(BaseCell->get_current_block() == &A){
                 cutnet -= A.gain[BaseCell->get_cell_num()];
                 MoveCell(A, B, BaseCell);
@@ -58,6 +82,7 @@ void FM_pass(int C, int N, int r, Cell* CELL_array, Net* NET_array, Block &A, Bl
                 cutnet -= B.gain[BaseCell->get_cell_num()];
                 MoveCell(B, A, BaseCell);
             }
+            move_time += ((clock() - (double)move_time_temp));
 
             if(review)
                 move_count_at_min--;
@@ -67,20 +92,43 @@ void FM_pass(int C, int N, int r, Cell* CELL_array, Net* NET_array, Block &A, Bl
             if(move_count_at_min == 0)
                 break;       
             
-            if(pass_start){    
+            if(cutnet < 0){
+                printf("negative cutnet error! move_count: %d\n", move_count);
+                assert(cutnet >= 0);
+            }
+
+            if(pass_start > 0){    
                 if(!review){              
                     min_cutnet = cutnet;
                     move_count_at_min = move_count;
+                    A_size_at_min = A.get_size();
                 }
-                pass_start = false;
+                pass_start--;
             }
             else if(!review){
                 if(min_cutnet > cutnet){
                     min_cutnet = cutnet;
                     move_count_at_min = move_count;
+                    A_size_at_min = A.get_size();
+                }
+                else if(min_cutnet == cutnet){
+                    if(std::abs(A.get_size() - A.get_W()) < std::abs(A_size_at_min - A.get_W())){
+                        min_cutnet = cutnet;
+                        move_count_at_min = move_count;
+                        A_size_at_min = A.get_size();
+                    }
                 }
             }
 
+            choose_time_temp = clock();
+            if(!stuck)
+                BaseCell = ChooseBaseCell_gain(A, B, r);
+                //BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
+            else{
+                BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
+            }
+            choose_time += (clock() - (double)choose_time_temp);
+            /*
             if(!stuck)
                 BaseCell = ChooseBaseCell_gain(A, B, r);
             else{
@@ -88,14 +136,30 @@ void FM_pass(int C, int N, int r, Cell* CELL_array, Net* NET_array, Block &A, Bl
                 //destroy_balance = true;
                 BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
             }
+            */
+
+           if(stuck && A.get_balance() != destroy_balance){
+                break;
+           }
+
+           if(move_count > C /2){
+               move_count = 0;
+               break;
+           }
         }
 
+        printf("choose + move time: %fs, move_count_at_min: %d\n", (clock() - (double)choosemove_time_temp) / CLOCKS_PER_SEC, move_count_at_min);
+        //printf("choose time: %fs, move time: %fs\n", choose_time/ CLOCKS_PER_SEC, move_time / CLOCKS_PER_SEC);
+        //printf("get_max_gain_cell_time: %fs\n", (get_max_gain_cell_time - get_max_gain_cell_time_temp)/ CLOCKS_PER_SEC);
         //printf("review finish\n");
 
+        reinit_time_temp = clock();
         if(!review)
             LoadDistribution(LocalMinDist, A, B, CELL_array, C);
         
         BlockReinitialization(C, A, B, CELL_array, NET_array);
+        //printf("reinit time: %fs\n\n", (clock() - (double)reinit_time_temp) / CLOCKS_PER_SEC);
+
 
         review = !review;
     }while(review);
@@ -115,15 +179,15 @@ int main(int argc, char ** argv){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
-    const int pass = 100; //how many pass we go through
-    const int k = 1;
+    const int pass = 30; //how many pass we go through
+    const int k = 5;
     const int InitVer = 2;
     int global_min_cutnet, local_min_cutnet;
     int cutnet;
     const int stuck_criteria = 5;
-    const bool stuck_out_itr = 1;
+    const double stuck_out_itr = 1;
     const bool balance_option = false; //true면 smax 기반, false면 비율 기반
-    const bool time_option = false;
+    const bool time_option = true;
     const bool stuck_option = true;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
@@ -215,11 +279,11 @@ int main(int argc, char ** argv){
     int move_max_loc = 0;
 
     double record_time = 0;
-    clock_t record_time_temp;
+    clock_t record_time_temp, pass_time_temp;
 
     for(int i = 0; i < pass; i++){
         //printf("\npass %d\n", i);
-        record_time = 0;
+        pass_time_temp = clock();
         //LocalMinDist.printCellDist();
 
         cutnet = LocalMinDist.get_cutnet();
@@ -247,10 +311,14 @@ int main(int argc, char ** argv){
                 stuck = false;
         }
 
+        
         if(GlobalMinDist.get_cutnet() > LocalMinDist.get_cutnet())
             GlobalMinDist = LocalMinDist;
 
         //assert(CountCutNet(A, NET_array, N) == cutnet);
+
+        printf("pass %d end, cutnet: %d, running time: %fs\n", i, GlobalMinDist.get_cutnet(), (clock() - (double)pass_time_temp) / CLOCKS_PER_SEC);
+        printf("A size: %d, B size: %d\n", LocalMinDist.get_A_size(), LocalMinDist.get_B_size());
     }
 
 
