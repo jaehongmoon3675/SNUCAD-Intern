@@ -15,9 +15,11 @@ bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cu
     if(_cutnet > cutnet)
         return false;
     
+    /*
     if((_cutnet == cutnet) && (std::abs(_A_size - ideal_balance) >= std::abs(A_size - ideal_balance)))
         return false;
-
+    */
+   
     for(int i = 1; i <= C; i++){
         if(CELL_array[i].get_current_block() == BlockA)
             distribution[i] = 1;
