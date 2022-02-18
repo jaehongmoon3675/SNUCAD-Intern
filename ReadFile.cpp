@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include <vector>
 
 #include "Cell.h"
 #include "Net.h"
@@ -27,9 +28,16 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
             CELL_array[i].set_cell_num(i);
 
         for(int i = 1; i <= N; i++){
+            std::vector<int> net_twice;
             do{ 
+                
                 readFile >> temp_cell;
-                pin_num++;;
+                for(int i = 0; i < net_twice.size(); i++){
+                    if(net_twice[i] == temp_cell)
+                        printf("twice!: %d\n", temp_cell);
+                }
+                net_twice.push_back(temp_cell);
+                pin_num++;
 
                 NET_array[i].set_net_num(i);
                 NET_array[i].push_cell(CELL_array + temp_cell);
