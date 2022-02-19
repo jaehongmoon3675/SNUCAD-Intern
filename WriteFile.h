@@ -5,6 +5,6 @@
 #include "Net.h"
 #include "Block.h"
 
-void write_output(Block &A, Cell* CEll_array, int C);
+void write_output(Block &A, Cell* CEll_array, int C, std::string _filename, int init_num, int pass);
 
 #endif

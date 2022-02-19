@@ -14,9 +14,9 @@ int gain_update_count = 0;
 
 extern std::stack<Cell*> FreeCellList;
 
-void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
+void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array, int &A_cell_num, int &B_cell_num){
     std::ifstream readFile;
-    readFile.open("output.part");
+    readFile.open("jpeg_1_10.part");
 
     //printf("read_hgr_map\n");
 
@@ -30,10 +30,12 @@ void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
             if(block == 1){
                 CELL_array[i].set_current_block(&A);
                 A.add_size(CELL_array[i].get_size());
+                A_cell_num++;
             }
             else{
                 CELL_array[i].set_current_block(&B);
                 B.add_size(CELL_array[i].get_size());
+                B_cell_num++;
             }
             FreeCellList.push(CELL_array + i);
         }
@@ -49,13 +51,17 @@ int main(){
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
     int pass = 20; //how many pass we go through
+    const int file_num = 2;
     int min_cutset_num;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
+    const std::string file_name_arr[3] = {"aes_128", "ldpc", "jpeg"};
+    std::string file_name = file_name_arr[file_num];
 
-    P = read_hgr(N, C, NET_array, CELL_array);
-    read_hgr_map(C, CELL_array);
-    W = read_hgr_area(C, CELL_array); 
+
+    P = read_hgr(N, C, NET_array, CELL_array, file_name);
+    read_hgr_map(C, CELL_array, file_name);
+    W = read_hgr_area(C, CELL_array, file_name); 
     
     int pmax = 0, smax = 0;
     double balance_low_bound = 0, balance_up_bound = 0;
@@ -68,15 +74,16 @@ int main(){
 
     Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
     Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "B");
-
-    read_output_part(A, B, C, CELL_array);
-    BlockReinitialization(A, B, CELL_array, NET_array, false);
+    int A_cell_num = 0, B_cell_num = 0;
+    read_output_part(A, B, C, CELL_array, A_cell_num, B_cell_num);
+    BlockReinitialization(C, A, B, CELL_array, NET_array, 0);
 
     
     printf("A size: %d, B size: %d\n", A.get_size(), B.get_size());
 
 
     printf("cutnet_num: %d\n", CountCutNet(A, NET_array, N));
+    printf("A cell num: %d, B cell num: %d\n", A_cell_num, B_cell_num);
 
 
     delete[] NET_array;

@@ -22,6 +22,8 @@ public:
         Ldistribution = new int[N + 1];
         gain = new int[C + 1];
     }
+    Block(const Block&);
+    bool operator==(const Block& compare) const;
     void CalculateDistribution(Cell* CELL_array);
     void CellGainInitialization(Block &T, Cell &c); //inner loop of implementation of the code prior to Proposition 2
     Cell* get_max_gain_cell() const;
@@ -50,11 +52,18 @@ public:
     int ith_net_distribution(int i){
         return Fdistribution[i] + Ldistribution[i];
     }
+    int get_W() { return W; }
     int get_size() { return size; }
     void set_size(int _size) { size = _size; }
     void deactivate_large_net(Net* NET_array);
     bool get_balance(){
         if(std::abs(size - R*W) < std::abs(ubound - R*W) / 2)
+            return true;
+        else
+            return false;
+    }
+    bool bigger(){
+        if(size > R*W)
             return true;
         else
             return false;
@@ -87,9 +96,10 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor
 Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance); //r is a balance factor
+Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance, bool which_block);
 
 //implementation of the code prior to Proposition 2
-void BlockReinitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, bool no_large_net);
+void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET_array, int pass);
 
 void MoveCell(Block &F, Block &T, Cell* BaseCell);
 

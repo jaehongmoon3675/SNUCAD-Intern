@@ -7,10 +7,11 @@
 #include "Cell.h"
 #include "Net.h"
 
-int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
+int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array, std::string _filename){
     int pin_num = 0;
     std::ifstream readFile;
-    readFile.open("initPlace.def.hgr");
+    std::string filename = _filename + ".def.hgr";
+    readFile.open(filename);
 
     //printf("read_hgr\n");
 
@@ -32,16 +33,21 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
             do{ 
                 
                 readFile >> temp_cell;
-                for(int i = 0; i < net_twice.size(); i++){
-                    if(net_twice[i] == temp_cell)
-                        printf("twice!: %d\n", temp_cell);
-                }
-                net_twice.push_back(temp_cell);
-                pin_num++;
 
-                NET_array[i].set_net_num(i);
-                NET_array[i].push_cell(CELL_array + temp_cell);
-                CELL_array[temp_cell].push_net(NET_array + i);
+                if(!CELL_array[temp_cell].net_list.empty() && CELL_array[temp_cell].net_list.back()->get_net_num() != i){
+                    pin_num++;
+
+                    NET_array[i].set_net_num(i);
+                    NET_array[i].push_cell(CELL_array + temp_cell);
+                    CELL_array[temp_cell].push_net(NET_array + i);
+                }
+                else if(CELL_array[temp_cell].net_list.empty()){
+                    pin_num++;
+
+                    NET_array[i].set_net_num(i);
+                    NET_array[i].push_cell(CELL_array + temp_cell);
+                    CELL_array[temp_cell].push_net(NET_array + i);
+                }
 
                 if(readFile.eof())
                     break;
@@ -61,9 +67,10 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array){
     return pin_num;
 }
 
-void read_hgr_map(const int C, Cell* &CELL_array){
+void read_hgr_map(const int C, Cell* &CELL_array, std::string _filename){
     std::ifstream readFile;
-    readFile.open("initPlace.def.hgr.map");
+    std::string filename = _filename + ".def.hgr.map";
+    readFile.open(filename);
 
     //printf("read_hgr_map\n");
 
@@ -83,11 +90,12 @@ void read_hgr_map(const int C, Cell* &CELL_array){
         printf("No map file\n");
 }
 
-int read_hgr_area(const int C, Cell* &CELL_array){
+int read_hgr_area(const int C, Cell* &CELL_array, std::string _filename){
     int total_weight = 0;
     
     std::ifstream readFile;
-    readFile.open("initPlace.def.area");
+    std::string filename = _filename + ".def.area";
+    readFile.open(filename);
 
     //printf("read_hgr_area\n");
 

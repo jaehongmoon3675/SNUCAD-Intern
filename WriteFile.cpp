@@ -7,8 +7,8 @@
 #include "Net.h"
 #include "Block.h"
 
-void write_output(Block &A, Cell* CEll_array, int C){
-    std::string filePath = "output.part";
+void write_output(Block &A, Cell* CEll_array, int C, std::string _filename, int init_num, int pass){
+    std::string filePath = _filename + "_" + std::to_string(init_num) + "_" + std::to_string(pass) + ".part";
 
     std::ofstream writeFile(filePath.data());
 

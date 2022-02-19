@@ -11,6 +11,8 @@
 #include "Block.h"
 #include "CellDist.h"
 
+extern std::stack<Cell*> FreeCellList;
+
 bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet){
     if(_cutnet > cutnet)
         return false;
@@ -53,15 +55,15 @@ void CellDist::overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int 
     return;
 }
 
-void CellDist::writeCellDist(Cell* CELL_array, int C) const{
-    std::string filePath = "output.part";
+void CellDist::writeCellDist(Cell* CELL_array, int C, std::string _filename, int init_num, int pass) const{
+    std::string filePath = _filename + "_" + std::to_string(init_num) + "_" + std::to_string(pass) + ".part";
     std::ofstream writeFile(filePath.data());
 
     if(writeFile.is_open()){
         for(int i = 1; i <= C; i++){
             writeFile << CELL_array[i].get_cell_name() << " ";
 
-            if(CELL_array[i].get_current_block() == BlockA)
+            if(distribution[i] == 1)
                 writeFile << "1" << std::endl;
             else
                 writeFile << "0" << std::endl;
@@ -77,8 +79,7 @@ void CellDist::printCellDist() const{
     printf("num of cell in A: %d, num of cell in B: %d\n", A_count, B_count);
 }
 
-void LoadDistribution(CellDist &Distribution, Cell* CELL_array, int C, int &cutnet){
-    cutnet = Distribution.get_cutnet();
+void LoadDistribution(CellDist &Distribution, Block &A, Block &B, Cell* CELL_array, int C){    
     Distribution.setBlockSize();
     for(int i = 1; i <= C; i++){
         CELL_array[i].set_current_block(Distribution.get_ith_cell_current_block(i));

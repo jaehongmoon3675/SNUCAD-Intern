@@ -1,10 +1,15 @@
+#define NDEBUG
+
 #include <iostream>
+#include <ctime>
+#include <cassert>
 #include <fstream>
 #include <cmath>
 #include <string>
 #include <list>
 #include <stack>
 #include <queue>
+
 
 #include "Cell.h"
 #include "Net.h"
@@ -13,10 +18,61 @@
 std::stack<Cell*> FreeCellList;
 
 extern int gain_update_count;
+double get_max_gain_cell_time = 0;
 
 
 //Using CellNode to record the best distribution
+Block::Block(const Block& copy)
+    : PMAX(copy.PMAX), max_gain(copy.max_gain), lbound(copy.lbound), ubound(copy.ubound), C(copy.C), N(copy.N), W(copy.W), R(copy.R), size(copy.size), name(copy.name) {
+    BUCKET = new Cell*[2 * PMAX + 1];
+    
+    BUCKET += PMAX;
 
+    for(int i = -PMAX; i <= PMAX; i++)
+        BUCKET[i] = copy.BUCKET[i];
+
+    Fdistribution = new int[N + 1];
+    Ldistribution = new int[N + 1];
+    gain = new int[C + 1];
+
+    for(int i = 1; i <= C; i++){
+        Fdistribution[i] = copy.Fdistribution[i];
+        Ldistribution[i] = copy.Ldistribution[i];
+        gain[i] = copy.gain[i];
+    }
+}
+
+bool Block::operator==(const Block& compare) const{
+    if(max_gain != compare.max_gain){
+        printf("not match max gain\n");
+        printf("look!: %d, %d\n", max_gain, compare.max_gain);
+        return false;
+    }
+    
+    for(int i = -PMAX; i <= PMAX; i++)
+        if(BUCKET[i] != compare.BUCKET[i]){
+            printf("not match BUCKET\n");
+            return false;
+        }
+    
+    for(int i =1; i <= C; i++){
+        if(Fdistribution[i] != compare.Fdistribution[i]){
+            printf("not match Fdis\n");
+            return false;
+        }
+        if(Ldistribution[i] != compare.Ldistribution[i]){
+            printf("not match Ldis\n");
+            return false;
+        }
+        
+        if(gain[i] != compare.gain[i]){
+            printf("not match gain\n");
+            return false;
+        }
+    }
+
+    return true;
+}
 
 
 void Block::CalculateDistribution(Cell* CELL_array){
@@ -63,6 +119,12 @@ void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implement
         c.BUCKETpre = nullptr;
         c.BUCKETnext = BUCKET[gain_adjust];
 
+        if(BUCKET[gain_adjust] != nullptr && c.get_cell_num() == BUCKET[gain_adjust]->get_cell_num()){
+            printf("cellgaininitialization\n");
+            printf("%d, %d\n", c.get_cell_num(), BUCKET[gain_adjust]->get_cell_num());
+            assert(c.get_cell_num() != BUCKET[gain_adjust]->get_cell_num());
+        }
+
         if(BUCKET[gain_adjust] != nullptr)
             BUCKET[gain_adjust]->BUCKETpre = &c;
         
@@ -98,15 +160,18 @@ Cell* Block::get_max_gain_cell() const{
         max_gain_cell = max_gain_cell ->BUCKETnext;
 
         if(max_gain_cell == nullptr){
+            //return nullptr;
+            
             i--;
             
             if(i < -PMAX)
-                break;
+                return nullptr;
 
             if(BUCKET[i] == nullptr)
                 break;
             else
                 max_gain_cell = BUCKET[i];
+            
         }
     }while(BUCKET[i] != nullptr);
 
@@ -378,6 +443,7 @@ void Block::print_Block_short(Cell* CELL_array){
 }
 
 void Block::empty_BUCKET(){
+    max_gain = -PMAX;
     for(int i = -PMAX; i <= PMAX; i++)
         BUCKET[i] = nullptr;
 }
@@ -391,7 +457,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         if(!A.push_Cell_ub(CELL_array + i))
             break;
         //printf("push in A\n");
-        FreeCellList.push(CELL_array + i);
+        //FreeCellList.push(CELL_array + i);
     }
 
     //printf("%d th cell is on block B\n", i);
@@ -400,7 +466,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         if(!B.push_Cell_ub(CELL_array + i))
             break;
         //printf("push in B\n");
-        FreeCellList.push(CELL_array + i);
+        //FreeCellList.push(CELL_array + i);
     }
     //printf("end\n");
 
@@ -416,6 +482,8 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     bool check = true;
     //bool alter = true;
     //Block* current_block = &A;
+
+    
 
     bool* NET_check_array = new bool[N + 1];
 
@@ -434,7 +502,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                 continue;
 
             if(A.push_Cell_ub(*itr)){
-                FreeCellList.push(*itr);
+                //FreeCellList.push(*itr);
                 for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
                     if(NET_check_array[(*jtr)->get_net_num()]){
                         net_queue.push(*jtr);
@@ -464,7 +532,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
             if(!B.push_Cell_ub(CELL_array + i))
                 break;
             
-            FreeCellList.push(CELL_array + i);
+            //FreeCellList.push(CELL_array + i);
         }
     }
 
@@ -502,7 +570,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                 continue;
 
             if(current_block->push_Cell_ub(*itr)){
-                FreeCellList.push(*itr);
+                //FreeCellList.push(*itr);
                 for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
                     if(NET_check_array[(*jtr)->get_net_num()]){
                         net_queue.push(*jtr);
@@ -544,7 +612,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
             if(!current_block->push_Cell_ub(CELL_array + i))
                 break;
             
-            FreeCellList.push(CELL_array + i);
+            //FreeCellList.push(CELL_array + i);
         }
     }
 
@@ -558,30 +626,37 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
 //implementation of the code prior to Proposition 2
 //first empty_BUCEKT()
-void BlockReinitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, bool no_large_net){
+void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET_array, int pass){
     //printf("BlockReinit start\n");
 
     A.empty_BUCKET();
     B.empty_BUCKET();
 
+
     A.CalculateDistribution(CELL_array);
     B.CalculateDistribution(CELL_array);
 
-    //deactivate large net for performance
-    if(no_large_net){
-        A.deactivate_large_net(NET_array);
-        B.deactivate_large_net(NET_array);
-    }
     Cell *ctemp;
 
-    while(!FreeCellList.empty()){
-        ctemp = FreeCellList.top();
-        FreeCellList.pop();
+    if(pass % 64 < 32){
+        for(int i = 1; i <= C; i++){
+            ctemp = CELL_array + i;
 
-        ctemp->locked = false;
+            ctemp->locked = false;
 
-        A.CellGainInitialization(B, *ctemp);
-        B.CellGainInitialization(A, *ctemp);
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+    }
+    else{
+       for(int i = C; i >= 1; i--){
+            ctemp = CELL_array + i;
+
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        } 
     }
 
     A.adjust_maxgain();
@@ -595,20 +670,24 @@ void BlockReinitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array,
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
     //printf("ChooseBaseCell start!\n");
 
+    clock_t get_max_gain_cell_time_temp = clock();
     Cell* max_gain_cellA, * max_gain_cellB;
     max_gain_cellA = A.get_max_gain_cell();
     max_gain_cellB = B.get_max_gain_cell();
 
+    get_max_gain_cell_time += (clock() - (double)get_max_gain_cell_time_temp);
+
+
     if(max_gain_cellA == nullptr && max_gain_cellB == nullptr)
         return nullptr;
     else if(max_gain_cellA == nullptr){
-        FreeCellList.push(max_gain_cellB);
+        //FreeCellList.push(max_gain_cellB);
         B.remove_from_BUCKET(max_gain_cellB);
         //printf("choose cell in B1\n");
         return max_gain_cellB;
     }
     else if(max_gain_cellB == nullptr){
-        FreeCellList.push(max_gain_cellA);
+        //FreeCellList.push(max_gain_cellA);
         A.remove_from_BUCKET(max_gain_cellA);
         //printf("choose cell in A1\n");
         return max_gain_cellA;
@@ -623,13 +702,13 @@ Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
         */
 
         if(A.gain[max_gain_cellA->get_cell_num()] > B.gain[max_gain_cellB->get_cell_num()]){
-            FreeCellList.push(max_gain_cellA);
+            //FreeCellList.push(max_gain_cellA);
             A.remove_from_BUCKET(max_gain_cellA);
             //printf("choose cell in A3\n");
             return max_gain_cellA;
         }
         else if(A.gain[max_gain_cellA->get_cell_num()] < B.gain[max_gain_cellB->get_cell_num()]){
-            FreeCellList.push(max_gain_cellB);
+            //FreeCellList.push(max_gain_cellB);
             B.remove_from_BUCKET(max_gain_cellB);
             //printf("choose cell in B3\n");
             return max_gain_cellB;
@@ -639,13 +718,13 @@ Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
 
         //std::cout << std::endl << "A: " << std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) << ", B: " << std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB)) <<std::endl;
         if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) < std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){
-            FreeCellList.push(max_gain_cellA);
+            //FreeCellList.push(max_gain_cellA);
             A.remove_from_BUCKET(max_gain_cellA);
             //printf("choose cell in A2\n");
             return max_gain_cellA;
         }
         else{
-            FreeCellList.push(max_gain_cellB);
+            //FreeCellList.push(max_gain_cellB);
             B.remove_from_BUCKET(max_gain_cellB);
             //printf("choose cell in B2\n");
             return max_gain_cellB;
@@ -663,13 +742,13 @@ Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance)
     if(max_gain_cellA == nullptr && max_gain_cellB == nullptr)
         return nullptr;
     else if(max_gain_cellA == nullptr){
-        FreeCellList.push(max_gain_cellB);
+        //FreeCellList.push(max_gain_cellB);
         B.remove_from_BUCKET(max_gain_cellB);
         //printf("choose cell in B1\n");
         return max_gain_cellB;
     }
     else if(max_gain_cellB == nullptr){
-        FreeCellList.push(max_gain_cellA);
+        //FreeCellList.push(max_gain_cellA);
         A.remove_from_BUCKET(max_gain_cellA);
         //printf("choose cell in A1\n");
         return max_gain_cellA;
@@ -678,13 +757,13 @@ Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance)
         //std::cout << std::endl << "A: " << std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) << ", B: " << std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB)) <<std::endl;
         if(destroy_balance){
             if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) > std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){
-                FreeCellList.push(max_gain_cellA);
+                //push(max_gain_cellA);
                 A.remove_from_BUCKET(max_gain_cellA);
                 //printf("choose cell in A2\n");
                 return max_gain_cellA;
             }
             else{
-                FreeCellList.push(max_gain_cellB);
+                //FreeCellList.push(max_gain_cellB);
                 B.remove_from_BUCKET(max_gain_cellB);
                 //printf("choose cell in B2\n");
                 return max_gain_cellB;
@@ -692,13 +771,68 @@ Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance)
         }
         else{
             if(std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) < std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB))){
-                FreeCellList.push(max_gain_cellA);
+                //FreeCellList.push(max_gain_cellA);
                 A.remove_from_BUCKET(max_gain_cellA);
                 //printf("choose cell in A2\n");
                 return max_gain_cellA;
             }
             else{
-                FreeCellList.push(max_gain_cellB);
+                //FreeCellList.push(max_gain_cellB);
+                B.remove_from_BUCKET(max_gain_cellB);
+                //printf("choose cell in B2\n");
+                return max_gain_cellB;
+            }
+        }
+    }
+}
+
+//BlockA가 크면 which_block은 true;
+Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance, bool which_block){ //r is a balance factor
+    //printf("ChooseBaseCell start!\n");
+
+    Cell* max_gain_cellA, * max_gain_cellB;
+    max_gain_cellA = A.get_max_gain_cell();
+    max_gain_cellB = B.get_max_gain_cell();
+
+    if(max_gain_cellA == nullptr && max_gain_cellB == nullptr)
+        return nullptr;
+    else if(max_gain_cellA == nullptr){
+        //FreeCellList.push(max_gain_cellB);
+        B.remove_from_BUCKET(max_gain_cellB);
+        //printf("choose cell in B1\n");
+        return max_gain_cellB;
+    }
+    else if(max_gain_cellB == nullptr){
+        //FreeCellList.push(max_gain_cellA);
+        A.remove_from_BUCKET(max_gain_cellA);
+        //printf("choose cell in A1\n");
+        return max_gain_cellA;
+    }
+    else{
+        //std::cout << std::endl << "A: " << std::abs(A.get_modified_balance_factor(max_gain_cellA) - r) << ", B: " << std::abs(1 - r - B.get_modified_balance_factor(max_gain_cellB)) <<std::endl;
+        if(destroy_balance){
+            if(which_block){
+                //push(max_gain_cellA);
+                A.remove_from_BUCKET(max_gain_cellA);
+                //printf("choose cell in A2\n");
+                return max_gain_cellA;
+            }
+            else{
+                //FreeCellList.push(max_gain_cellB);
+                B.remove_from_BUCKET(max_gain_cellB);
+                //printf("choose cell in B2\n");
+                return max_gain_cellB;
+            }
+        }
+        else{
+            if(which_block){
+                //FreeCellList.push(max_gain_cellA);
+                A.remove_from_BUCKET(max_gain_cellA);
+                //printf("choose cell in A2\n");
+                return max_gain_cellA;
+            }
+            else{
+                //FreeCellList.push(max_gain_cellB);
                 B.remove_from_BUCKET(max_gain_cellB);
                 //printf("choose cell in B2\n");
                 return max_gain_cellB;
