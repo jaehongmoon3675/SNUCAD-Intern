@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cassert>
 #include <list>
+#include <algorithm>
 #include <ctime>
 
 #include "Cell.h"
@@ -23,12 +24,17 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     bool review = false;
     //init_pass_start의 값이 크면 결과는 빨리 나오나, 운적인 요소가 크게 작용
     int init_pass_start = C / 500;
+    //int init_pass_start = C / 50;
     int move_count = 0, move_count_at_min = 1;
     int A_size_at_min = A.get_size();
+    const int out_from_stuck_citeria = 1;
+    int out_from_stuck = out_from_stuck_citeria;
     int min_cutnet, cutnet;
 
-    min_cutnet = LocalMinDist.get_cutnet();
+    BlockReinitialization(C, A, B, CELL_array, NET_array, pass_num);
 
+    min_cutnet = LocalMinDist.get_cutnet();
+    int cutnet_ubound = min_cutnet * 1.2;
     //Block TempA = A;
     //Block TempB = B;
 
@@ -119,6 +125,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                     move_count_at_min = move_count;
                     A_size_at_min = A.get_size();
                 }
+                /*
                 else if(min_cutnet == cutnet){
                     if(std::abs(A.get_size() - A.get_W()) < std::abs(A_size_at_min - A.get_W())){
                         min_cutnet = cutnet;
@@ -126,6 +133,8 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                         A_size_at_min = A.get_size();
                     }
                 }
+                */
+                
             }
 
             choose_time_temp = clock();
@@ -153,13 +162,27 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                     move_count_at_min = move_count;
                 }
                 stuck_temp = false;
-           }
+            }
 
+            if(stuck && !stuck_temp && (A.bigger() == bigger)){
+                stuck_temp = true;
+                /*
+                out_from_stuck--;
+                if(out_from_stuck == 0){
+                    move_count = 0;
+                    break;
+                }
+                */
+                if(move_count > C / 4){
+                    move_count = 0;
+                    break;
+                }
+            }
             
-           if(move_count > C - C / 8){
+            if(move_count > C - C / 8){
                move_count = 0;
                break;
-           }
+            }
            
         }
 
@@ -173,13 +196,14 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             LoadDistribution(LocalMinDist, A, B, CELL_array, C);
             if(stuck != stuck_temp)
                 stuck_temp = stuck;
+            
+            BlockReinitialization(C, A, B, CELL_array, NET_array, pass_num);
         }
-        BlockReinitialization(C, A, B, CELL_array, NET_array, pass_num);
         //printf("reinit time: %fs\n\n", (clock() - (double)reinit_time_temp) / CLOCKS_PER_SEC);
 
-
+        out_from_stuck = out_from_stuck_citeria;
+        stuck_temp = stuck;
         review = !review;
-        pass_num++;
     }while(review);
 
     //printf("min_cutnet: %d, cutnet: %d\n", min_cutnet, cutnet);
@@ -198,20 +222,24 @@ int main(int argc, char ** argv){
     int P, W; //P: total pin num, W: total weight
     const double r = 0.5; //balance factor
     const double pm_r = 0.05;
-    const int pass = 800; //how many pass we go through
+    const int pass = 20; //how many pass we go through
     const int k = 5;
     const int InitVer = 2;
     const int file_num = 1;
     int global_min_cutnet, local_min_cutnet;
     int cutnet;
-    const int stuck_criteria = 5;
-    const double stuck_out_itr = 1;
+    //const int stuck_criteria = 8;
+    //const double stuck_out_itr = 0.5;
+    const int stuck_criteria = 10;
+    const int stuck_out_itr = 1;
     const bool balance_option = false; //true면 smax 기반, false면 비율 기반
     const bool time_option = false;
     const bool stuck_option = true;
     const std::string file_name_arr[4] = {"aes_128", "ldpc", "jpeg", "initPlace"};
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
+
+    int min_pass = 0;
 
     std::string file_name = file_name_arr[file_num];
 
@@ -262,8 +290,14 @@ int main(int argc, char ** argv){
     case 3:
         BlockInitialization(A, B, CELL_array, NET_array, C, N, 0);
         break;
+    case 4:
+        BlockInitialization(A, B, CELL_array, NET_array, C, N, 0, 0);
+        break;
+    case 5:
+        BlockInitialization(A, B, CELL_array, NET_array, C, N, 0, 0, 0);
+        break;
     default:
-        BlockInitialization(A, B, CELL_array, NET_array, C, N, 0);
+        BlockInitialization(A, B, CELL_array, NET_array, C, N);
     }
 
     BlockReinitialization(C, A, B, CELL_array, NET_array, 0);
@@ -305,6 +339,8 @@ int main(int argc, char ** argv){
     double record_time = 0;
     clock_t record_time_temp, pass_time_temp;
 
+    int pass_num = 0;
+
     for(int i = 0; i < pass; i++){
         //printf("\npass %d\n", i);
         pass_time_temp = clock();
@@ -331,7 +367,7 @@ int main(int argc, char ** argv){
 
             if(!stuck && stuck_count == stuck_criteria){
                 stuck = true;
-                stuck_count *= stuck_out_itr;
+                stuck_count = stuck_out_itr;
                 destroy_balance = !A.get_balance();
                 destroy_balance = true;
             }
@@ -344,11 +380,22 @@ int main(int argc, char ** argv){
             //printf("\nstuck_count: %d\n", stuck_count);
         }
 
-        
+        /*
+        if(stuck && 0 <= (i + 1) % 128 && (i + 1) % 128 < stuck_criteria){
+            printf("out from stuck!\n");
+            StuckOut(A, B, CELL_array, NET_array, C, N, !A.bigger());
+            BlockReinitialization(C, A, B, CELL_array, NET_array, i);
+            LocalMinDist.update(CELL_array, c, A.get_size(), B.get_size(), CountCutNet(A, NET_array, N));
+            stuck_count = 0;
+            stuck = false;
+        }
+        */
+                
         if(GlobalMinDist.get_cutnet() > LocalMinDist.get_cutnet()){
             GlobalMinDist = LocalMinDist;
             min_cutnet = GlobalMinDist.get_cutnet();
             stuck_count = 0;
+            min_pass = i;
             stuck = false;
         }
 
@@ -357,13 +404,14 @@ int main(int argc, char ** argv){
             printf("A size: %d, B size: %d\n", LocalMinDist.get_A_size(), LocalMinDist.get_B_size());
         }
         printf("pass %d end, cutnet: %d\n", i, LocalMinDist.get_cutnet());
-        printf("A size: %d, B size: %d\n", LocalMinDist.get_A_size(), LocalMinDist.get_B_size());
+        //printf("A size: %d, B size: %d\n", LocalMinDist.get_A_size(), LocalMinDist.get_B_size());
     }
 
 
     printf("\n---------- After FM Algorithm----------\n");
     
     GlobalMinDist.writeCellDist(CELL_array, C, file_name, InitVer, pass);
+    printf("Move: %d ,", min_pass);
     GlobalMinDist.printCellDist();
 
     //printf("Final min num of cutnet: %d\n", global_min_cutnet);

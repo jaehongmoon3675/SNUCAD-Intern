@@ -474,7 +474,6 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         printf("Error on BlockInitialization");
 }
 
-
 //ver2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N){
     std::queue<Net *> net_queue;
@@ -484,16 +483,32 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     //Block* current_block = &A;
 
     
-
+    //Net_Num_Size* num_size_order = new Net_Num_Size[N + 1];
     bool* NET_check_array = new bool[N + 1];
 
-    for(int i = 1; i <= N; i++)
+    for(int i = 1; i <= N; i++){
         NET_check_array[i] = true;
+        //num_size_order[i].num = NET_array[i].get_net_num();
+        //num_size_order[i].size = NET_array[i].get_size();
+    }
+
+    //qsort(num_size_order + 1, N, sizeof(Net_Num_Size), net_compare);
 
     net_queue.push(NET_array + 1);
     NET_check_array[1] = false;
 
     while(check){
+        if(net_queue.empty()){
+            for(int i = 1; i <= N; i++){
+                if(NET_check_array[i]){
+                    net_queue.push(NET_array + i);
+                    NET_check_array[i] = false;
+
+                    break;
+                }
+
+            }
+        }
         temp_net = net_queue.front();
         net_queue.pop();
 
@@ -516,13 +531,16 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
             }
         }
 
+        
+        /*
         if(check){
             for(int i = 1; i <= N; i++)
                 if(NET_check_array[i]){
                     net_queue.push(NET_array + i);
                     NET_check_array[i] = false;
                 }
-        }
+        } 
+        */       
     }
 
     int i;
@@ -596,6 +614,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
         }
 
+        /*
         if(check){
             for(int i = 1; i <= N; i++)
                 if(NET_check_array[i]){
@@ -603,6 +622,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                     NET_check_array[i] = false;
                 }
         }
+        */
     }
 
     int i;
@@ -623,6 +643,204 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     delete[] NET_check_array;
 }
 
+struct Net_Num_Size{
+    int num;
+    int size;
+};
+
+int net_compare(const void* _a, const void* _b){
+    Net_Num_Size* a = (Net_Num_Size*)_a;
+    Net_Num_Size* b = (Net_Num_Size*)_b;
+    if(a->size < b->size)
+        return -1;
+    else if(a->size > b->size)
+        return 1;
+    return 0;
+}
+
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver4, int _ver4){
+    std::queue<Net *> net_queue;
+    Net* temp_net = nullptr;
+    bool check = true;
+    //int net_push_finish = 1;
+    //bool alter = true;
+    //Block* current_block = &A;
+
+    
+    Net_Num_Size* num_size_order = new Net_Num_Size[N + 1];
+    bool* NET_check_array = new bool[N + 1];
+
+    for(int i = 1; i <= N; i++){
+        NET_check_array[i] = true;
+        num_size_order[i].num = NET_array[i].get_net_num();
+        num_size_order[i].size = NET_array[i].get_cell_count();
+    }
+
+    qsort(num_size_order + 1, N, sizeof(Net_Num_Size), net_compare);
+
+    for(int i = 1; i <= N; i++){
+        temp_net = NET_array + num_size_order[i].num;
+        NET_check_array[num_size_order[i].num] = false;
+
+        for(auto itr = temp_net->cell_list.begin(); itr != temp_net->cell_list.end(); itr++){
+            if((*itr)->get_current_block() == &A)
+                continue;
+
+            if(!A.push_Cell_ub(*itr))
+                break;
+        }
+    }
+
+    int i;
+
+    for(i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() != &A){
+            if(!B.push_Cell_ub(CELL_array + i))
+                break;
+        }
+    }
+
+    if(i <= C)
+        printf("Initialization error!, C: %d, i:%d\n", C, i);
+
+    delete[] num_size_order;        
+    delete[] NET_check_array;
+}
+
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver5, int _ver5, int __ver5){
+    std::queue<Net *> net_queueA;
+    std::queue<Net *> net_queueB;
+    Net* temp_netA = nullptr;
+    Net* temp_netB = nullptr;
+    bool checkA = true;
+    bool checkB = true;
+    //bool alter = true;
+    //Block* current_block = &A;
+
+    
+    //Net_Num_Size* num_size_order = new Net_Num_Size[N + 1];
+    bool* NET_check_array = new bool[N + 1];
+
+    for(int i = 1; i <= N; i++){
+        NET_check_array[i] = true;
+        //num_size_order[i].num = NET_array[i].get_net_num();
+        //num_size_order[i].size = NET_array[i].get_size();
+    }
+
+    //qsort(num_size_order + 1, N, sizeof(Net_Num_Size), net_compare);
+
+    net_queueA.push(NET_array + 1);
+    NET_check_array[1] = false;
+
+    net_queueB.push(NET_array + N);
+    NET_check_array[N] = false;
+
+    while(checkA && checkB){
+        if(net_queueA.empty()){
+            for(int i = 1; i <= N; i++){
+                if(NET_check_array[i]){
+                    net_queueA.push(NET_array + i);
+                    NET_check_array[i] = false;
+
+                    break;
+                }
+
+            }
+        }
+
+        if(net_queueB.empty()){
+            for(int i = 1; i <= N; i++){
+                if(NET_check_array[i]){
+                    net_queueB.push(NET_array + i);
+                    NET_check_array[i] = false;
+
+                    break;
+                }
+
+            }
+        }
+
+        if(net_queueA.empty()){
+            break;
+        }
+        if(net_queueB.empty()){
+            break;
+        }
+
+        temp_netA = net_queueA.front();
+        temp_netB = net_queueB.front();
+        net_queueA.pop();
+        net_queueB.pop();
+
+        for(auto itr = temp_netA->cell_list.begin(); itr != temp_netA->cell_list.end(); itr++){
+            if((*itr)->get_current_block() != nullptr)
+                continue;
+
+            if(A.push_Cell_ub(*itr)){
+                //FreeCellList.push(*itr);
+                for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if(NET_check_array[(*jtr)->get_net_num()]){
+                        net_queueA.push(*jtr);
+                        NET_check_array[(*jtr)->get_net_num()] = false;
+                    }
+                }
+            }
+            else{
+                checkA = false;
+                break; // A가 가득 찼으므로 break, 나머지는 B에 채우자                
+            }
+        }
+
+        for(auto itr = temp_netB->cell_list.begin(); itr != temp_netB->cell_list.end(); itr++){
+            if((*itr)->get_current_block() != nullptr)
+                continue;
+
+            if(B.push_Cell_ub(*itr)){
+                //FreeCellList.push(*itr);
+                for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if(NET_check_array[(*jtr)->get_net_num()]){
+                        net_queueB.push(*jtr);
+                        NET_check_array[(*jtr)->get_net_num()] = false;
+                    }
+                }
+            }
+            else{
+                checkB = false;
+                break; // B가 가득 찼으므로 break, 나머지는 A에 채우자                
+            }
+        }
+    }
+
+    int i;
+
+    if(!checkA){
+        for(i = 1; i <= C; i++){
+            if(CELL_array[i].get_current_block() == nullptr){
+                if(!B.push_Cell_ub(CELL_array + i))
+                    break;
+                
+                //FreeCellList.push(CELL_array + i);
+            }
+        }
+    }
+    else{
+        for(i = 1; i <= C; i++){
+            if(CELL_array[i].get_current_block() == nullptr){
+                if(!A.push_Cell_ub(CELL_array + i))
+                    break;
+                
+                //FreeCellList.push(CELL_array + i);
+            }
+        }
+        
+    }
+
+    if(i <= C)
+        printf("Initialization error!, i: %d, C: %d\n", i, C);
+
+    delete[] NET_check_array;
+}
+
 
 //implementation of the code prior to Proposition 2
 //first empty_BUCEKT()
@@ -637,9 +855,75 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
     B.CalculateDistribution(CELL_array);
 
     Cell *ctemp;
+    int bias = (C / 16) * (3 * (pass / 16) % 16);
+    bool reverse = ((pass / 47) % 2 == 0);
+    //int bias = (C / 4) * ((pass / 8) % 4);
+    //bool reverse = ((pass / 64) % 2 == 0);
+    //int bias = (C / 4) * ((pass / 37) % 4);
+    //bool reverse = ((pass / 64) % 2 == 0);
+    //bool reverse = false;
+    
+    if(reverse){
+        for(int i = bias + 1; i <= C; i++){
+            ctemp = CELL_array + i;
 
-    if(pass % 64 < 32){
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+
+        for(int i = 1; i <= bias; i++){
+            ctemp = CELL_array + i;
+
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+    }
+    else{
+        for(int i = C; i >= bias + 1; i--){
+            ctemp = CELL_array + i;
+
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+
+        for(int i = bias; i >= 1; i--){
+            ctemp = CELL_array + i;
+
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+    }
+    
+    /*
+    if(pass % 64 < 20){
         for(int i = 1; i <= C; i++){
+            ctemp = CELL_array + i;
+
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+    }
+    else if(pass % 64 < 40){
+        for(int i = C / 2; i <= C; i++){
+            ctemp = CELL_array + i;
+
+            ctemp->locked = false;
+
+            A.CellGainInitialization(B, *ctemp);
+            B.CellGainInitialization(A, *ctemp);
+        }
+
+        for(int i = C / 2 - 1; i >= 1; i--){
             ctemp = CELL_array + i;
 
             ctemp->locked = false;
@@ -658,6 +942,7 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
             B.CellGainInitialization(A, *ctemp);
         } 
     }
+    */
 
     A.adjust_maxgain();
     B.adjust_maxgain();
@@ -878,4 +1163,59 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
     }
 
     //printf("end MoveCell\n");
+}
+
+//bigger가 true면 A가 더 크다.
+void StuckOut(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, bool bigger){
+    std::queue<Net *> net_queue;
+    Net* temp_net = nullptr;
+    bool check = true;
+    //bool alter = true;
+    Block* current_block = (bigger)? &B : &A;
+
+    bool* NET_check_array = new bool[N + 1];
+
+    for(int i = 1; i <= N; i++)
+        NET_check_array[i] = true;
+
+    for(int i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() == current_block){
+            net_queue.push(CELL_array[i].net_list.front());
+            NET_check_array[CELL_array[i].net_list.front()->get_net_num()] = false;
+            break;
+        }
+    }
+
+    while(check){
+        temp_net = net_queue.front();
+        net_queue.pop();
+
+        for(auto itr = temp_net->cell_list.begin(); itr != temp_net->cell_list.end(); itr++){
+            if((*itr)->get_current_block() == current_block)
+                continue;
+
+            if(current_block->push_Cell_ub(*itr)){
+                for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if(NET_check_array[(*jtr)->get_net_num()]){
+                        net_queue.push(*jtr);
+                        NET_check_array[(*jtr)->get_net_num()] = false;
+                    }
+                }
+            }
+            else{
+                check = false;
+                break; // A가 가득 찼으므로 break, 나머지는 B에 채우자                
+            }
+        }
+
+        if(check){
+            for(int i = 1; i <= N; i++)
+                if(NET_check_array[i]){
+                    net_queue.push(NET_array + i);
+                    NET_check_array[i] = false;
+                }
+        }
+    }
+
+    delete[] NET_check_array;
 }

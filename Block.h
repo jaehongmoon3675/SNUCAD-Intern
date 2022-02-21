@@ -92,6 +92,8 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
 //VERSION 2 Ver3
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver3);
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver4, int _ver4);
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver5, int _ver5, int __ver5);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor
@@ -102,5 +104,7 @@ Cell* ChooseBaseCell_balance(Block &A, Block &B, double r, bool destroy_balance,
 void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET_array, int pass);
 
 void MoveCell(Block &F, Block &T, Cell* BaseCell);
+
+void StuckOut(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, bool bigger);
 
 #endif

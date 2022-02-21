@@ -30,9 +30,16 @@ public:
         }
         printf("\n");
     }
+    int get_size(){ return size; }
     int get_cell_count(){ return cell_count; }
     void set_net_num(int num) { net_num = num; };
     bool get_activate() { return activate; }
+    bool operator<(const Net& compare){
+        if(this->size < compare.size)
+            return true;
+        
+        return false;
+    }
     ~Net(){
 
     }

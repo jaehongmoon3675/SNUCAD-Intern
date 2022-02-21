@@ -2,6 +2,7 @@
 #include <fstream>
 #include <list>
 #include <stack>
+#include <algorithm>
 
 #include "Cell.h"
 #include "Net.h"
@@ -16,7 +17,7 @@ extern std::stack<Cell*> FreeCellList;
 
 void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array, int &A_cell_num, int &B_cell_num){
     std::ifstream readFile;
-    readFile.open("jpeg_1_10.part");
+    readFile.open("ldpc_2_100.part");
 
     //printf("read_hgr_map\n");
 
@@ -51,11 +52,11 @@ int main(){
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
     int pass = 20; //how many pass we go through
-    const int file_num = 2;
+    const int file_num = 1;
     int min_cutset_num;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
-    const std::string file_name_arr[3] = {"aes_128", "ldpc", "jpeg"};
+    const std::string file_name_arr[4] = {"aes_128", "ldpc", "jpeg", "initPlace"};
     std::string file_name = file_name_arr[file_num];
 
 
