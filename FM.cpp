@@ -19,17 +19,19 @@ int gain_update_count = 0;
 extern double get_max_gain_cell_time;
 
 //stuck check에 유의
-void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_array, Block &A, Block &B, const bool stuck, CellDist& LocalMinDist){
+void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_array, Block &A, Block &B, const bool stuck, CellDist& LocalMinDist, bool big_wave){
     Cell* BaseCell = nullptr;
     bool review = false;
+    bool how_to_start = true;
     //init_pass_start의 값이 크면 결과는 빨리 나오나, 운적인 요소가 크게 작용
-    int init_pass_start = C / 500;
+    int init_pass_start = 100;
     //int init_pass_start = C / 50;
     int move_count = 0, move_count_at_min = 1;
     int A_size_at_min = A.get_size();
     const int out_from_stuck_citeria = 1;
     int out_from_stuck = out_from_stuck_citeria;
     int min_cutnet, cutnet;
+
 
     BlockReinitialization(C, A, B, CELL_array, NET_array, pass_num);
 
@@ -60,9 +62,11 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     clock_t choosemove_time_temp, reinit_time_temp, choose_time_temp, move_time_temp;
     double choose_time = 0, move_time = 0;
     double get_max_gain_cell_time_temp;
+    int pass_start;
 
     do{ 
-        int pass_start = init_pass_start; //계속해서 초기화 시켜여줘야함에 유의!
+        //int pass_start = init_pass_start; //계속해서 초기화 시켜여줘야함에 유의!
+        pass_start = (how_to_start)? init_pass_start : 1;
         cutnet = LocalMinDist.get_cutnet();
         //printf("----------------------------");
 
@@ -89,10 +93,14 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             move_time_temp = clock();
             if(BaseCell->get_current_block() == &A){
                 cutnet -= A.gain[BaseCell->get_cell_num()];
+                if(!how_to_start && A.gain[BaseCell->get_cell_num()] > 0)
+                    pass_start = false;
                 MoveCell(A, B, BaseCell);
             }
             else{
                 cutnet -= B.gain[BaseCell->get_cell_num()];
+                if(!how_to_start && B.gain[BaseCell->get_cell_num()] > 0)
+                    pass_start = false;
                 MoveCell(B, A, BaseCell);
             }
             move_time += ((clock() - (double)move_time_temp));
@@ -110,14 +118,16 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 assert(cutnet >= 0);
             }
 
-            if(pass_start > 0){    
+            if(pass_start){    
                 if(!review){              
                     min_cutnet = cutnet;
                     move_count_at_min = move_count;
                     //printf("%d ", move_count_at_min);
                     A_size_at_min = A.get_size();
+
+                    if(how_to_start)
+                        pass_start--;
                 }
-                pass_start--;
             }
             else if(!review){
                 if(min_cutnet > cutnet){
@@ -164,20 +174,18 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 stuck_temp = false;
             }
 
-            if(stuck && !stuck_temp && (A.bigger() == bigger)){
+            
+
+            if(big_wave && stuck && !stuck_temp && (A.bigger() == bigger)){
                 stuck_temp = true;
-                /*
-                out_from_stuck--;
-                if(out_from_stuck == 0){
-                    move_count = 0;
-                    break;
-                }
-                */
+
                 if(move_count > C / 4){
                     move_count = 0;
                     break;
                 }
             }
+            
+            
             
             if(move_count > C - C / 8){
                move_count = 0;
@@ -222,7 +230,7 @@ int main(int argc, char ** argv){
     int P, W; //P: total pin num, W: total weight
     const double r = 0.5; //balance factor
     const double pm_r = 0.05;
-    const int pass = 20; //how many pass we go through
+    const int pass = 200; //how many pass we go through
     const int k = 5;
     const int InitVer = 2;
     const int file_num = 1;
@@ -231,7 +239,7 @@ int main(int argc, char ** argv){
     //const int stuck_criteria = 8;
     //const double stuck_out_itr = 0.5;
     const int stuck_criteria = 10;
-    const int stuck_out_itr = 1;
+    const int stuck_out_itr = 5;
     const bool balance_option = false; //true면 smax 기반, false면 비율 기반
     const bool time_option = false;
     const bool stuck_option = true;
@@ -297,7 +305,7 @@ int main(int argc, char ** argv){
         BlockInitialization(A, B, CELL_array, NET_array, C, N, 0, 0, 0);
         break;
     default:
-        BlockInitialization(A, B, CELL_array, NET_array, C, N);
+        read_output_part(A, B, C, CELL_array);
     }
 
     BlockReinitialization(C, A, B, CELL_array, NET_array, 0);
@@ -315,6 +323,9 @@ int main(int argc, char ** argv){
     int temp;
     int move_count = 0;
     int stuck_count = 0;
+    int stuck_out_count = 0;
+    bool big_wave = false;
+    const int big_wave_criteria = 8;
     int gain_update_count_temp = 0;
     bool stuck_check = true; //얼마나 오래동안 stuck 되었는지를 체크하기 위함
     bool stuck = false; //실제 stuck 되어있는지 여부
@@ -351,7 +362,7 @@ int main(int argc, char ** argv){
         assert(A.get_size() == LocalMinDist.get_A_size());
         assert(B.get_size() == LocalMinDist.get_B_size());
 
-        FM_pass(C, N, r, i, CELL_array, NET_array, A, B, stuck, LocalMinDist);
+        FM_pass(C, N, r, i, CELL_array, NET_array, A, B, stuck, LocalMinDist, big_wave);
 
         if(stuck_option){
             if(!stuck && (min_cutnet <= LocalMinDist.get_cutnet()))
@@ -375,7 +386,16 @@ int main(int argc, char ** argv){
             if(stuck_count == 0){
                 min_cutnet = LocalMinDist.get_cutnet();
                 stuck = false;
+                stuck_out_count++;
             }
+
+            if(big_wave)
+                stuck_out_count++;
+
+            if((stuck_out_count + 1) % big_wave_criteria == 0)
+                big_wave = true;
+            else
+                big_wave = false;
 
             //printf("\nstuck_count: %d\n", stuck_count);
         }
@@ -397,6 +417,7 @@ int main(int argc, char ** argv){
             stuck_count = 0;
             min_pass = i;
             stuck = false;
+            stuck_out_count++;
         }
 
         if(time_option){

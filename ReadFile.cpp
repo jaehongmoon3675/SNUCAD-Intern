@@ -6,6 +6,7 @@
 
 #include "Cell.h"
 #include "Net.h"
+#include "Block.h"
 
 int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array, std::string _filename){
     int pin_num = 0;
@@ -117,4 +118,33 @@ int read_hgr_area(const int C, Cell* &CELL_array, std::string _filename){
     }
 
     return total_weight;
+}
+
+void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
+    std::ifstream readFile;
+    readFile.open("ldpc.part");
+
+    //printf("read_hgr_map\n");
+
+    int block;
+    std::string temp_cell_name;
+
+    if(readFile.is_open()){
+        for(int i = 1; i <= C; i++){
+            readFile >> temp_cell_name >> block;
+            
+            if(block == 1){
+                CELL_array[i].set_current_block(&A);
+                A.add_size(CELL_array[i].get_size());
+            }
+            else{
+                CELL_array[i].set_current_block(&B);
+                B.add_size(CELL_array[i].get_size());
+            }
+        }
+
+        readFile.close();
+    }
+    else
+        printf("No map file\n");
 }

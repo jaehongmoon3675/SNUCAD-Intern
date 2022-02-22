@@ -460,7 +460,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
         //FreeCellList.push(CELL_array + i);
     }
 
-    //printf("%d th cell is on block B\n", i);
+    printf("%d th cell is on block B\n", i);
 
     for(; i <= C; i++){
         if(!B.push_Cell_ub(CELL_array + i))
@@ -563,7 +563,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
 //BlockInitialization ver3
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver3){
-    std::queue<Net *> net_queue;
+    //std::queue<Net *> net_queue;
     Net* temp_net = nullptr;
     bool check = true;
     bool alter = true; //true면 A, false면 B
@@ -574,9 +574,33 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     for(int i = 1; i <= N; i++)
         NET_check_array[i] = true;
 
-    net_queue.push(NET_array + 1);
-    NET_check_array[1] = false;
+    check = false;
 
+    for(int i = 1; i <= N; i++){
+        for(auto itr = (NET_array + i)->cell_list.begin(); itr != (NET_array + i)->cell_list.end(); itr++){
+            if((*itr)->get_current_block() == &A)
+                continue;
+
+            if(!A.push_Cell_ub(*itr)){
+                check = true;
+                break;
+            }
+        }
+
+        if(check)
+            break;
+    }
+
+    int i;
+
+    for(i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() != &A){
+            if(!B.push_Cell_ub(CELL_array + i))
+                break;
+
+        }
+    }
+    /*
     while(check){
         if(net_queue.empty())
             break;
@@ -614,7 +638,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
         }
 
-        /*
+        
         if(check){
             for(int i = 1; i <= N; i++)
                 if(NET_check_array[i]){
@@ -622,7 +646,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                     NET_check_array[i] = false;
                 }
         }
-        */
+        
     }
 
     int i;
@@ -635,6 +659,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
             //FreeCellList.push(CELL_array + i);
         }
     }
+    */
 
 
     if(i <= C)

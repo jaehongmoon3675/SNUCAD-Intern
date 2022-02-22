@@ -17,7 +17,7 @@ extern std::stack<Cell*> FreeCellList;
 
 void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array, int &A_cell_num, int &B_cell_num){
     std::ifstream readFile;
-    readFile.open("ldpc_2_100.part");
+    readFile.open("aes_128_1_500.part");
 
     //printf("read_hgr_map\n");
 
@@ -52,7 +52,7 @@ int main(){
     int P, W; //P: total pin num, W: total weight
     double r = 0.5; //balance factor
     int pass = 20; //how many pass we go through
-    const int file_num = 1;
+    const int file_num = 0;
     int min_cutset_num;
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
