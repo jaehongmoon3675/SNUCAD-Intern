@@ -7,19 +7,19 @@
 
 class CellDist{
 public:
-    CellDist(int _C, int _N, int _ideal_balance, int _cutnet, int _A_size, int _B_size, Block* _BlockA, Block* _BlockB, Cell* _CELL_array) 
-        : C(_C), N(_N), ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A_size), B_size(_B_size), A_count(_BlockA->get_cell_num(_CELL_array, _C)), B_count(_BlockB->get_cell_num(_CELL_array, _C)), BlockA(_BlockA), BlockB(_BlockB) {
+    CellDist(int _C, int _N, int _ideal_balance, int _cutnet, Block* _A, Block* _B, Cell* _CELL_array, Net* _NET_array) 
+        : C(_C), N(_N), ideal_balance(_ideal_balance), cutnet(_cutnet), A_size(_A->get_size()), B_size(_B->get_size()), A_count(_A->get_cell_num(_CELL_array, _C)), B_count(_B->get_cell_num(_CELL_array, _C)), A_uncut_count(_A->get_uncut_count(_NET_array, N)), B_uncut_count(_B->get_uncut_count(_NET_array, N)), A(_A), B(_B) {
         distribution = new int[_C + 1];
 
         for(int i = 1; i <= C; i++){
-            if(_CELL_array[i].get_current_block() == BlockA)
+            if(_CELL_array[i].get_current_block() == A)
                 distribution[i] = 1;
             else
                 distribution[i] = 0;
         }
     }
     CellDist()
-        : C(0), N(0), ideal_balance(0), cutnet(0), A_size(0), B_size(0), A_count(0), B_count(0), BlockA(nullptr), BlockB(nullptr), distribution(nullptr) {}
+        : C(0), N(0), ideal_balance(0), cutnet(0), A_size(0), B_size(0), A_count(0), B_count(0), A(nullptr), B(nullptr), distribution(nullptr) {}
     CellDist(const CellDist& copy){
         C = copy.C;
         N = copy.N;
@@ -29,8 +29,10 @@ public:
         B_size = copy.B_size;
         A_count = copy.A_count;
         B_count = copy.B_count;
-        BlockA = copy.BlockA;
-        BlockB = copy.BlockB;
+        A_uncut_count = copy.A_uncut_count;
+        B_uncut_count = copy.B_uncut_count;
+        A = copy.A;
+        B = copy.B;
         
         distribution = new int[C + 1];
 
@@ -46,8 +48,10 @@ public:
         B_size = copy.B_size;
         A_count = copy.A_count;
         B_count = copy.B_count;
-        BlockA = copy.BlockA;
-        BlockB = copy.BlockB;
+        A_uncut_count = copy.A_uncut_count;
+        B_uncut_count = copy.B_uncut_count;
+        A = copy.A;
+        B = copy.B;
 
         if(distribution != nullptr)
             delete[] distribution;
@@ -59,37 +63,36 @@ public:
 
         return *this;
     }
-    bool update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet);
-    void overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet);
-    bool valid(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet){
-        if(_cutnet > cutnet)
-            return false;
-    
-        if((_cutnet == cutnet) && (std::abs(_A_size - ideal_balance) >= std::abs(A_size - ideal_balance)))
-            return false;
-
-        return true;
-    }
-    void writeCellDist(Cell* CELL_array, int C, std::string _filename, int init_num, int pass) const;
+    bool update(Cell* CELL_array, int C, Net* NET_array, int N, int _cutnet);
+    void overWrite(Cell* CELL_array, int C, Net* NET_array, int N, int _cutnet);
+    void writeCellDist(Cell* CELL_array, int C, std::string _filename, int init_num, int pass, int bias) const;
     void printCellDist() const;
     int get_A_size() const { return A_size; }
     int get_B_size() const { return B_size; }
     int get_cutnet() const { return cutnet; }
     void setBlockSize(){
-        BlockA->set_size(A_size);
-        BlockB->set_size(B_size);
+        A->set_size(A_size);
+        B->set_size(B_size);
     }
     Block* get_ith_cell_current_block(int i){
         if(distribution[i] == 1)
-            return BlockA;
+            return A;
         else
-            return BlockB;
+            return B;
     }
     /*
     void print_CellDist(){
         printf("num of cutnet: %d, A_size: %d, B_size: %d, A_count: %d, B_count: %d\n", cutnet, A_size, B_size, A_count, B_count);
     }
     */
+    int operator[](int i) const{
+        if(i < 1){
+            printf("Invalid CellDist Access!\n");
+            return -1;
+        }
+        else
+            return distribution[i];
+    }
     ~CellDist() {
         delete[] distribution;
     }
@@ -100,7 +103,8 @@ private:
     int ideal_balance;
     int A_size, B_size;
     int A_count, B_count;
-    Block* BlockA, * BlockB;
+    int A_uncut_count, B_uncut_count;
+    Block* A, * B;
 };
 
 void LoadDistribution(CellDist &Distribution, Block &A, Block &B, Cell* CELL_array, int C);

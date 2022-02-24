@@ -13,7 +13,7 @@
 
 extern std::stack<Cell*> FreeCellList;
 
-bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet){
+bool CellDist::update(Cell* CELL_array, int C, Net* NET_array, int N, int _cutnet){
     if(_cutnet > cutnet)
         return false;
     
@@ -23,39 +23,44 @@ bool CellDist::update(Cell* CELL_array, int C, int _A_size, int _B_size, int _cu
     */
    
     for(int i = 1; i <= C; i++){
-        if(CELL_array[i].get_current_block() == BlockA)
+        if(CELL_array[i].get_current_block() == A)
             distribution[i] = 1;
         else
             distribution[i] = 0;
     }
 
-    A_size = _A_size;
-    B_size = _B_size;
-    A_count = BlockA->get_cell_num(CELL_array, C);
-    B_count = BlockB->get_cell_num(CELL_array, C);
+    A_size = A->get_size();
+    B_size = B->get_size();
+    A_count = A->get_cell_num(CELL_array, C);
+    B_count = B->get_cell_num(CELL_array, C);
+    A_uncut_count = A->get_uncut_count(NET_array, N);
+    B_uncut_count = B->get_uncut_count(NET_array, N);
     cutnet = _cutnet;
 
     return true;
 }
 
-void CellDist::overWrite(Cell* CELL_array, int C, int _A_size, int _B_size, int _cutnet){
+void CellDist::overWrite(Cell* CELL_array, int C, Net* NET_array, int N, int _cutnet){
     for(int i = 1; i <= C; i++){
-        if(CELL_array[i].get_current_block() == BlockA)
+        if(CELL_array[i].get_current_block() == A)
             distribution[i] = 1;
         else
             distribution[i] = 0;
     }
 
-    A_size = _A_size;
-    B_size = _B_size;
-    A_count = BlockA->get_cell_num(CELL_array, C);
-    B_count = BlockB->get_cell_num(CELL_array, C);
+    A_size = A->get_size();
+    B_size = B->get_size();
+    A_count = A->get_cell_num(CELL_array, C);
+    B_count = B->get_cell_num(CELL_array, C);
+    A_uncut_count = A->get_uncut_count(NET_array, N);
+    B_uncut_count = B->get_uncut_count(NET_array, N);
     cutnet = _cutnet;
 
     return;
 }
 
-void CellDist::writeCellDist(Cell* CELL_array, int C, std::string _filename, int init_num, int pass) const{
+//수정 필요
+void CellDist::writeCellDist(Cell* CELL_array, int C, std::string _filename, int init_num, int pass, int bias) const{
     std::string filePath = _filename + "_" + std::to_string(init_num) + "_" + std::to_string(pass) + ".part";
     std::ofstream writeFile(filePath.data());
 
@@ -64,9 +69,9 @@ void CellDist::writeCellDist(Cell* CELL_array, int C, std::string _filename, int
             writeFile << CELL_array[i].get_cell_name() << " ";
 
             if(distribution[i] == 1)
-                writeFile << "1" << std::endl;
+                writeFile << bias + 1 << std::endl;
             else
-                writeFile << "0" << std::endl;
+                writeFile << bias << std::endl;
         }
 
         writeFile.close();

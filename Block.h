@@ -48,21 +48,22 @@ public:
     void print_Block(Cell* CELL_array);
     void print_Block_short(Cell* CELL_array);
     void empty_BUCKET();
-    int get_cell_num(Cell* CELL_array, int C);
+    int get_cell_num(const Cell* CELL_array, int C) const;
+    int get_uncut_count(const Net* NET_array, int N) const;
+    void set_current_block_of_net(Net* NET_array, int N);
     int ith_net_distribution(int i){
         return Fdistribution[i] + Ldistribution[i];
     }
-    int get_W() { return W; }
-    int get_size() { return size; }
+    int get_W() const { return W; }
+    int get_size() const { return size; }
     void set_size(int _size) { size = _size; }
-    void deactivate_large_net(Net* NET_array);
-    bool get_balance(){
+    bool get_balance() const {
         if(std::abs(size - R*W) < std::abs(ubound - R*W) / 2)
             return true;
         else
             return false;
     }
-    bool bigger(){
+    bool bigger() const{
         if(size > R*W)
             return true;
         else
@@ -89,11 +90,8 @@ private:
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
 
-//VERSION 2 Ver3
+//VERSION 2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver3);
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver4, int _ver4);
-void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int ver5, int _ver5, int __ver5);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor

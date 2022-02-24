@@ -13,38 +13,46 @@
 
 int gain_update_count = 0;
 
-extern std::stack<Cell*> FreeCellList;
 
-void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array, int &A_cell_num, int &B_cell_num){
+
+int read_output_part(Cell* &CELL_array, int C, Net* NET_array, int N){
     std::ifstream readFile;
-    readFile.open("aes_128_1_500.part");
-
-    //printf("read_hgr_map\n");
+    readFile.open("output.part");
 
     int block;
     std::string temp_cell_name;
+    int* CELL_block_info = new int[C + 1];
 
     if(readFile.is_open()){
         for(int i = 1; i <= C; i++){
             readFile >> temp_cell_name >> block;
             
-            if(block == 1){
-                CELL_array[i].set_current_block(&A);
-                A.add_size(CELL_array[i].get_size());
-                A_cell_num++;
-            }
-            else{
-                CELL_array[i].set_current_block(&B);
-                B.add_size(CELL_array[i].get_size());
-                B_cell_num++;
-            }
-            FreeCellList.push(CELL_array + i);
+            CELL_block_info[i] = block;
         }
 
         readFile.close();
     }
     else
         printf("No map file\n");
+
+    int cutnet = 0;
+
+    for(int i = 1; i <= N; i++){
+        auto itr = NET_array[i].cell_list.begin();
+        int current_block_num = CELL_block_info[(*itr)->get_cell_num()];
+        itr++;
+
+        for(; itr != NET_array[i].cell_list.end(); itr++){
+            if(current_block_num != CELL_block_info[(*itr)->get_cell_num()]){
+                cutnet++;
+                break;
+            }
+        }
+    }
+
+    delete[] CELL_block_info;
+
+    return cutnet;
 }
 
 int main(){
@@ -76,15 +84,9 @@ int main(){
     Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
     Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "B");
     int A_cell_num = 0, B_cell_num = 0;
-    read_output_part(A, B, C, CELL_array, A_cell_num, B_cell_num);
-    BlockReinitialization(C, A, B, CELL_array, NET_array, 0);
+    int cutnet = read_output_part(CELL_array, C, NET_array, N);
 
-    
-    printf("A size: %d, B size: %d\n", A.get_size(), B.get_size());
-
-
-    printf("cutnet_num: %d\n", CountCutNet(A, NET_array, N));
-    printf("A cell num: %d, B cell num: %d\n", A_cell_num, B_cell_num);
+    printf("cutnet: %d\n", cutnet);
 
 
     delete[] NET_array;
