@@ -20,11 +20,12 @@ int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
 
-    const int block_num = 10;
+    const int block_num = 3;
     const int InitVer = 1;
-    const int pass = 1000;
+    const int pass = 100;
+    const double skew = 0.1;
   
-    const int file_num = 0;
+    const int file_num = 3;
     const std::string file_name_arr[4] = {"aes_128", "ldpc", "jpeg", "initPlace"};
     std::string file_name = file_name_arr[file_num];
     Net* NET_array = nullptr;
@@ -39,7 +40,7 @@ int main(){
     read_hgr_map(C, CELL_array, file_name);
     W = read_hgr_area(C, CELL_array, file_name); 
     
-    int cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, 0);
+    int cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, true);
     int degree = calculate_degree(CELL_array, C, NET_array, N, block_num, cutnet);
 
     write_output(CELL_array, C, file_name, block_num, InitVer, pass);

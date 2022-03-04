@@ -68,14 +68,14 @@ int get_max_cell_count(Net* NET_array, int N){
     return max_cell_count;
 }
 
-void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_array, Block &A, Block &B, const bool stuck, CellDist& LocalMinDist, bool big_wave){
+void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_array, Block &A, Block &B, const bool stuck, CellDist& LocalMinDist, bool big_wave, bool alternate){
     Cell* BaseCell = nullptr;
     bool review = false;
     bool how_to_start = true;
     //init_pass_start의 값이 크면 결과는 빨리 나오나, 운적인 요소가 크게 작용
     int init_pass_start = 100;
     //int init_pass_start = C / 50;
-    int move_count = 0, move_count_at_min = 1;
+    int move_count = 0, move_count_at_min = 2;
     int A_size_at_min = A.get_size();
     const int out_from_stuck_citeria = 1;
     int out_from_stuck = out_from_stuck_citeria;
@@ -85,7 +85,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     BlockReinitialization(C, A, B, CELL_array, NET_array, pass_num);
 
     min_cutnet = LocalMinDist.get_cutnet();
-    int cutnet_ubound = min_cutnet * 1.2;
     //Block TempA = A;
     //Block TempB = B;
 
@@ -99,6 +98,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     const bool destroy_balance = A.get_balance();
     const bool bigger = A.bigger();
     bool stuck_temp = stuck;
+    Block* alternate_block;
     //bool destroy_balance = true;
     
     /*
@@ -115,8 +115,9 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
 
     do{ 
         //int pass_start = init_pass_start; //계속해서 초기화 시켜여줘야함에 유의!
-        pass_start = (how_to_start)? init_pass_start : 1;
+        pass_start = (how_to_start)? init_pass_start : 2;
         cutnet = LocalMinDist.get_cutnet();
+        alternate_block = bigger? &A : &B;
         //printf("----------------------------");
 
         //assert(TempA == A);
@@ -126,12 +127,29 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
         choosemove_time_temp = clock();
         
         choose_time_temp = clock();
-        if(!stuck_temp)
+
+        if(alternate){
+            BaseCell = alternate_block->get_max_gain_cell();
+
+            if(BaseCell != nullptr){
+                alternate_block->remove_from_BUCKET(BaseCell);
+            }
+            /*
+            else{
+                printf("Something is wrong...\n");
+                printf("A: %d, %f\n", A.get_size(), A.get_ubound());
+                assert(BaseCell != nullptr);
+            }
+            */
+            alternate_block = (alternate_block == &A)? &B : &A;
+        }
+        else if(!stuck_temp)
             BaseCell = ChooseBaseCell_gain(A, B, r);
             //BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
         else{
             BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance, bigger);
         }
+
         choose_time += (clock() - (double)choose_time_temp);
 
         while(BaseCell != nullptr){        
@@ -177,30 +195,40 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 }
             }
             else if(!review){
-                if(min_cutnet > cutnet){
-                    min_cutnet = cutnet;
-                    move_count_at_min = move_count;
-                    A_size_at_min = A.get_size();
-                }
-                /*
-                else if(min_cutnet == cutnet){
-                    if(std::abs(A.get_size() - A.get_W()) < std::abs(A_size_at_min - A.get_W())){
+                if(!alternate){
+                    if(min_cutnet > cutnet){
                         min_cutnet = cutnet;
                         move_count_at_min = move_count;
                         A_size_at_min = A.get_size();
                     }
                 }
-                */
-                
+                else{
+                    if(min_cutnet > cutnet && move_count %2 == 0){
+                        min_cutnet = cutnet;
+                        move_count_at_min = move_count;
+                        A_size_at_min = A.get_size();
+                    }
+                }
             }
 
             choose_time_temp = clock();
-            if(!stuck_temp)
+
+            if(alternate){
+                BaseCell = alternate_block->get_max_gain_cell();
+
+                if(BaseCell != nullptr){
+                    alternate_block->remove_from_BUCKET(BaseCell);
+                }
+                
+                alternate_block = (alternate_block == &A)? &B : &A;
+            }
+            else if(!stuck_temp)
                 BaseCell = ChooseBaseCell_gain(A, B, r);
                 //BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance);
             else{
                 BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance, bigger);
             }
+
             choose_time += (clock() - (double)choose_time_temp);
             /*
             if(!stuck)
@@ -213,7 +241,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             */
 
            //if(stuck && move_count >= init_pass_start / 2 && A.get_strict_balance() >= 0 && A.get_strict_balance() != destroy_balance){
-            if(stuck_temp && A.bigger() != bigger && A.get_balance() != destroy_balance){
+            if(stuck_temp && A.bigger() != bigger && A.get_balance() != destroy_balance && (!alternate || move_count %2 == 0)){
                 if(!review){
                     min_cutnet = cutnet;
                     move_count_at_min = move_count;
@@ -223,7 +251,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
 
             
 
-            if(big_wave && stuck && !stuck_temp && (A.bigger() == bigger)){
+            if(big_wave && stuck && !stuck_temp && (A.bigger() == bigger) && (!alternate || move_count %2 == 0)){
                 stuck_temp = true;
 
                 if(move_count > C / 4){
@@ -232,14 +260,16 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 }
             }
             
-            
-            
-            if(move_count > C - C / 8){
+        
+            if(move_count > C - C / 8 && move_count % 2 == 0){
                move_count = 0;
                break;
             }
            
         }
+
+        //printf("move_count_at_min: %d\n", move_count_at_min);
+        assert(!alternate || move_count_at_min % 2 == 0);
 
         //printf("choose + move time: %fs, move_count_at_min: %d\n", (clock() - (double)choosemove_time_temp) / CLOCKS_PER_SEC, move_count_at_min);
         //printf("choose time: %fs, move time: %fs\n", choose_time/ CLOCKS_PER_SEC, move_time / CLOCKS_PER_SEC);
@@ -330,14 +360,14 @@ void read_past_record(const int _N, const int _C, const Net* _NET_array, const C
 }
 
 
-//FM 후 cut 된 net는 activate = false로 .. net의 current block이 activate 정보를 가지고 있는데 굳이 해주어야 하나...?
 //최종적으로 globalmin을 load하고 reinit 후, 반드시 Block의 set_current_block_of_net을 호출시켜주어야
-int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, const int _C, const int _N, const int _P, const int _W, const int block_num, const Block* current_block, int bias){
+//alternate시 초기화가 이미 되어있어야.
+int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, const int _C, const int _N, const int _P, const int _W, const int block_num, const Block* current_block, double skew, int bias, bool alternate){
     int C, N;
     int P, W; //P: total pin num, W: total weight
 
     const double r = (double)(block_num / 2) / block_num; //balance factor
-    const double pm_r = 0.025;
+    const double pm_r = skew / 2;
     //const int pass = 30; //how many pass we go through
     //const int InitVer = 1;
     int global_min_cutnet, local_min_cutnet;
@@ -385,18 +415,25 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     
     
     Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
-    Block B(pmax, W - balance_up_bound, W - balance_low_bound, C, N, W, r, "B");
+    Block B(pmax, W - balance_up_bound, W - balance_low_bound, C, N, W, 1 - r, "B");
 
+    //alternate인 경우 초기화 조건이 주어져야 한다.
 
+    if(alternate){
+        BlockInitialization_r(B, A, CELL_array, C);
+    }
+    else{
     switch(InitVer){
-    case 1:
-        BlockInitialization(B, A, CELL_array, C);
-        break;
-    case 2:
-        BlockInitialization(B, A, CELL_array, NET_array, C, N);
-        break;
-    default:
-        read_output_part(A, B, C, CELL_array);
+        case 1:
+            //BlockInitialization(A, B, CELL_array, C);
+            BlockInitialization(B, A, CELL_array, C);
+            break;
+        case 2:
+            BlockInitialization(B, A, CELL_array, NET_array, C, N);
+            break;
+        default:
+            read_output_part(A, B, C, CELL_array);
+        }   
     }
 
     BlockReinitialization(C, A, B, CELL_array, NET_array, 0);
@@ -424,7 +461,11 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     int pass_num = 0;
 
     for(int i = 0; i < pass; i++){
-        //printf("\npass %d\n", i);
+        //printf("pass %d\n", i);
+
+        if(i == 0 || i == pass - 1)
+            printf("A size: %d, B size: %d, A ubound: %f, B ubound: %f, A cell count: %d, B cell count: %d\n", A.get_size(), B.get_size(), A.get_ubound(), B.get_ubound(), A.get_cell_num(CELL_array, C), B.get_cell_num(CELL_array, C));
+
         //LocalMinDist.printCellDist();
 
         cutnet = LocalMinDist.get_cutnet();
@@ -432,7 +473,7 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
         assert(A.get_size() == LocalMinDist.get_A_size());
         assert(B.get_size() == LocalMinDist.get_B_size());
 
-        FM_pass(C, N, r, i, CELL_array, NET_array, A, B, stuck, LocalMinDist, big_wave);
+        FM_pass(C, N, r, i, CELL_array, NET_array, A, B, stuck, LocalMinDist, big_wave, alternate);
 
         if(stuck_option){
             if(!stuck && (min_cutnet <= LocalMinDist.get_cutnet()))
@@ -502,7 +543,7 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     int next_step_2 = block_num - next_step_1;
 
     if(next_step_1 > 1){
-        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_1, &A, bias + next_step_2);
+        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_1, &A, skew, bias + next_step_2, alternate);
         for(int i = 1; i <= C; i++){
             if(GlobalMinDist[i] == 1)
                 _CELL_array[current_to_past[i]].set_current_block_num(bias + CELL_array[i].get_current_block_num());
@@ -517,7 +558,7 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     }
 
     if(next_step_2 > 1){
-        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_2, &B, bias);
+        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_2, &B, skew, bias, alternate);
         for(int i = 1; i <= C; i++){
             if(GlobalMinDist[i] == 0)
                 _CELL_array[current_to_past[i]].set_current_block_num(bias + CELL_array[i].get_current_block_num());
@@ -568,6 +609,8 @@ int calculate_degree(Cell* &CELL_array, int C, Net* NET_array, int N, int block_
                 if(degree_temp == 1)
                     cutnet_check++;
                 
+                block_check[(*itr)->get_current_block_num()] = true;
+
                 degree_temp++;
             }
 
@@ -578,6 +621,7 @@ int calculate_degree(Cell* &CELL_array, int C, Net* NET_array, int N, int block_
         if(degree_temp != 1)
             degree += degree_temp;
     }
+
 
     assert(cutnet == cutnet_check);
 

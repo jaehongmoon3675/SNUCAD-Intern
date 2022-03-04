@@ -132,9 +132,10 @@ void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implement
 Cell* Block::get_max_gain_cell() const{
     //printf("start get_max_gain_cell()\n");
 
-    if(max_gain < -PMAX)
+    if(max_gain < -PMAX){
+        //printf("problem in get_max_gain_cell\n");
         return nullptr;
-
+    }
     int i = max_gain;
     int modified_size;
     Cell* max_gain_cell = BUCKET[max_gain];
@@ -466,6 +467,30 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
 
     for(i = 1; i <= C; i++){
         if(!A.push_Cell_ub(CELL_array + i))
+            break;
+        //printf("push in A\n");
+        //FreeCellList.push(CELL_array + i);
+    }
+
+    //printf("%d th cell is on block B\n", i);
+
+    for(; i <= C; i++){
+        if(!B.push_Cell_ub(CELL_array + i))
+            break;
+        //printf("push in B\n");
+        //FreeCellList.push(CELL_array + i);
+    }
+    //printf("end\n");
+
+    if(i == C)
+        printf("Error on BlockInitialization 1");
+}
+
+void BlockInitialization_r(Block &A, Block &B, Cell* CELL_array, int C){
+    int i;
+
+    for(i = 1; i <= C; i++){
+        if(!A.push_Cell_r(CELL_array + i))
             break;
         //printf("push in A\n");
         //FreeCellList.push(CELL_array + i);

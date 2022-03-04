@@ -56,6 +56,7 @@ public:
     }
     int get_W() const { return W; }
     int get_size() const { return size; }
+    double get_ubound() const { return ubound; }
     void set_size(int _size) { size = _size; }
     bool get_balance() const {
         if(std::abs(size - R*W) < std::abs(ubound - R*W) / 2)
@@ -89,6 +90,7 @@ private:
 //VERSION1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
+void BlockInitialization_r(Block &A, Block &B, Cell* CELL_array, int C);
 
 //VERSION 2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
