@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include <vector>
 
 #include "Cell.h"
 #include "Net.h"

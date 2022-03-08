@@ -3,6 +3,7 @@
 #include <list>
 #include <stack>
 #include <algorithm>
+#include <vector>
 
 #include "Cell.h"
 #include "Net.h"

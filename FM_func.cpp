@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <ctime>
 #include <string>
+#include <vector>
 
 #include "Cell.h"
 #include "Net.h"
@@ -303,7 +304,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
 }
 
 
-void read_past_record(const int _N, const int _C, const Net* _NET_array, const Cell* _CELL_array, int N, int C, Net* &NET_array, Cell* &CELL_array, const Block* current_block, int &pin_num, int &total_weight, int * current_to_past){
+void read_past_block_record(const int _N, const int _C, const Net* _NET_array, const Cell* _CELL_array, int N, int C, Net* &NET_array, Cell* &CELL_array, const Block* current_block, int &pin_num, int &total_weight, int * current_to_past){
     pin_num = 0;
     total_weight = 0;
 
@@ -359,7 +360,6 @@ void read_past_record(const int _N, const int _C, const Net* _NET_array, const C
     delete[] past_to_current;
 }
 
-
 //최종적으로 globalmin을 load하고 reinit 후, 반드시 Block의 set_current_block_of_net을 호출시켜주어야
 //alternate시 초기화가 이미 되어있어야.
 int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, const int _C, const int _N, const int _P, const int _W, const int block_num, const Block* current_block, double skew, int bias, bool alternate){
@@ -396,7 +396,7 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
         C = current_block->get_cell_num(_CELL_array, _C);
         N = current_block->get_uncut_count(_NET_array, _N);
         current_to_past = new int[C + 1];
-        read_past_record(_N, _C, _NET_array, _CELL_array, N, C, NET_array, CELL_array, current_block, P, W, current_to_past);
+        read_past_block_record(_N, _C, _NET_array, _CELL_array, N, C, NET_array, CELL_array, current_block, P, W, current_to_past);
     }
 
     int pmax = 0, smax = 0;
@@ -463,9 +463,10 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     for(int i = 0; i < pass; i++){
         //printf("pass %d\n", i);
 
+        /*
         if(i == 0 || i == pass - 1)
             printf("A size: %d, B size: %d, A ubound: %f, B ubound: %f, A cell count: %d, B cell count: %d\n", A.get_size(), B.get_size(), A.get_ubound(), B.get_ubound(), A.get_cell_num(CELL_array, C), B.get_cell_num(CELL_array, C));
-
+        */
         //LocalMinDist.printCellDist();
 
         cutnet = LocalMinDist.get_cutnet();
@@ -630,4 +631,100 @@ int calculate_degree(Cell* &CELL_array, int C, Net* NET_array, int N, int block_
     delete[] block_check;
 
     return cutnet;
+}
+
+void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Cell* _CELL_array, int N, int C, Net* &NET_array, Cell* &CELL_array, const int current_bin, int &pin_num, int &total_weight, int *current_to_past){
+    pin_num = 0;
+    total_weight = 0;
+
+    char c;
+    int temp_cell_num;
+
+    NET_array = new Net[N + 1];
+    CELL_array = new Cell[C + 1];
+
+    int* past_to_current = new int[_C + 1];
+
+    int j = 1;
+    for(int i = 1; i <= _C; i++){
+        if(_CELL_array[i].get_bin() != current_bin)
+            continue;
+        
+        CELL_array[j].set_cell_num(j);
+        CELL_array[j].set_size(_CELL_array[i].get_size());
+        total_weight += CELL_array[j].get_size();
+        CELL_array[j].set_name(_CELL_array[i].get_cell_name());
+
+        past_to_current[i] = j;
+        current_to_past[j] = i;
+
+        j++;
+    }
+
+    j = 0;
+
+    for(int i = 1; i <= _N; i++){
+        assert(j <= N);
+
+        bool check = true;
+
+        for(auto itr = _NET_array[i].cell_list.begin(); itr != _NET_array[i].cell_list.end(); itr++){
+            if((*itr)->get_bin() == current_bin){
+                if(check){
+                    j++;
+                    check = false;
+                    NET_array[j].set_net_num(j);
+                }
+
+                temp_cell_num = past_to_current[(*itr)->get_cell_num()];
+                NET_array[j].push_cell(CELL_array + temp_cell_num);
+                CELL_array[temp_cell_num].push_net(NET_array + j);
+            }
+        }
+    }
+
+    delete[] past_to_current;
+}
+
+void bin_based_FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, const int _C, const int _N, const int _P, const int _W, const int block_num, double skew, int map_n, int map_m, std::vector<int> *BIN_array){
+    int C, N;
+    int P, W; //P: total pin num, W: total weight
+    
+    Net* NET_array = nullptr;
+    Cell* CELL_array = nullptr;
+    int* current_to_past = nullptr;
+
+    int* net_in_bin = new int[map_n * map_m];
+
+    int cutnet;
+
+    for(int i = 0; i < map_n * map_m; i++)
+        net_in_bin[i] = 0;
+    
+    for(int i = 1; i <= _N; i++){
+        for(auto itr = _NET_array[i].cell_list.begin(); itr != _NET_array[i].cell_list.end(); itr++){
+            net_in_bin[(*itr)->get_bin()]++;
+        }
+    }
+
+    for(int i = 0; i < map_n * map_m; i++){
+        C = BIN_array[i].size();
+        N = net_in_bin[i];
+        current_to_past = new int[C + 1];
+        read_bin_record(_N, _C, _NET_array, _CELL_array, N, C, NET_array, CELL_array, i, P, W, current_to_past);
+
+        cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, false);
+
+        printf("bin %d cutnet: %d\n", i, cutnet);
+
+        for(int i = 1; i <= C; i++){
+            _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+        }
+
+        delete[] NET_array;
+        delete[] CELL_array;
+        delete[] current_to_past;
+    }
+
+    delete[] net_in_bin;
 }

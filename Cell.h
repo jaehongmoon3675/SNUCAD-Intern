@@ -34,6 +34,7 @@ public:
     int get_size() const{
         return size;
     }
+    int get_bin() const { return bin; }
     int get_current_block_num() const{ return current_block_num; }
     void set_size(int size){
         this->size = size;
@@ -41,15 +42,18 @@ public:
     void set_name(std::string name){
         this->name = name;
     }
+    void add_size(int _size) { size += _size; }
+    void set_bin(int _bin) { bin = _bin; }
     void set_current_block_num(int _current_block_num) { current_block_num = _current_block_num; }
     std::string get_cell_name() const { return name; }
     void print_Cell();
     void get_net_list(int* distribution); //add the distribution of net list to the array 'distribution'
     ~Cell(){
     }
-private:
+protected:
     int size;
     int pin;
+    int bin;
     int cell_num;
     int current_block_num;
     Block* CurrentBlock;
@@ -57,5 +61,10 @@ private:
 };
 
 void printCellInfo(Cell* CELL_array, int C);
+
+class Cell_BIN : public Cell{
+public:
+    std::vector<int> Cell_set;
+};
 
 #endif

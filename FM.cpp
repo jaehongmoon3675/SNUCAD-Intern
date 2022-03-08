@@ -1,10 +1,11 @@
-#define NDEBUG
+//#define NDEBUG
 
 #include <iostream>
 #include <cassert>
 #include <list>
 #include <algorithm>
 #include <ctime>
+#include <vector>
 
 #include "Cell.h"
 #include "Net.h"
@@ -20,10 +21,16 @@ int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
 
+    //세로가 n, 가로는 m
+    const int map_n = 2;
+    const int map_m = 2;
+
+    std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
+
     const int block_num = 3;
     const int InitVer = 1;
     const int pass = 100;
-    const double skew = 0.1;
+    const double skew = 0.05;
   
     const int file_num = 3;
     const std::string file_name_arr[4] = {"aes_128", "ldpc", "jpeg", "initPlace"};
@@ -38,17 +45,57 @@ int main(){
 
     P = read_hgr(N, C, NET_array, CELL_array, file_name);
     read_hgr_map(C, CELL_array, file_name);
-    W = read_hgr_area(C, CELL_array, file_name); 
+    W = read_hgr_area(C, CELL_array, file_name);
+    read_place(C, CELL_array, file_name, map_n, map_m, BIN_array);
+
+    bin_based_FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, skew, map_n, map_m, BIN_array);
+
+    int CB = block_num * map_n * map_m;
+
+    Cell_BIN* CELL_BIN_array = new Cell_BIN[CB + 1];
+    Net* NET_BIN_array = new Net[N + 1];
+
+    for(int i = 1; i <= CB; i++){
+        CELL_BIN_array[i].set_cell_num(i);
+        CELL_BIN_array[i].set_current_block_num((i - 1) % block_num);
+        CELL_BIN_array[i].set_bin((i - 1) / block_num);
+    }
+
+    int current_CB;
+
+    for(int i = 1; i <= C; i++){
+        current_CB = block_num * CELL_array[i].get_bin() + CELL_array[i].get_current_block_num() + 1;
+        CELL_BIN_array[current_CB].Cell_set.push_back(i);
+
+        assert(CELL_BIN_array[current_CB].get_current_block_num() == CELL_array[i].get_current_block_num());
+
+        assert(current_CB <= CB);
+    }
+
+    for(int i = 1; i <= N; i++){
+        NET_BIN_array[i].set_net_num(i);
+
+        for(auto itr = NET_array[i].cell_list.begin(); itr != NET_array[i].cell_list.end(); itr++){
+            current_CB = block_num * (*itr)->get_bin() + (*itr)->get_current_block_num() + 1;
+
+            NET_BIN_array[i].push_cell(CELL_BIN_array + current_CB);
+            CELL_BIN_array[current_CB].push_net(NET_BIN_array + i);
+        }
+    }
+
+    for(int i = 1; i <= CB; i++)
+        assert(CELL_BIN_array[i].get_size() == 1);
     
-    int cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, true);
-    int degree = calculate_degree(CELL_array, C, NET_array, N, block_num, cutnet);
+    //int cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, true);
+    //int degree = calculate_degree(CELL_array, C, NET_array, N, block_num, cutnet);
 
     write_output(CELL_array, C, file_name, block_num, InitVer, pass);
 
-    printf("cutnet: %d, degree: %d\n", cutnet, degree);
+    //printf("cutnet: %d, degree: %d\n", cutnet, degree);
 
     delete[] NET_array;
     delete[] CELL_array;
+    delete[] BIN_array;
 
     end = clock();
     total_time = (double)end - start;
