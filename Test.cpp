@@ -82,8 +82,8 @@ int main(){
     printf("N: %d C: %d, P: %d, W: %d, R: %f\n", N, C, P, W, r);
     printf("pmax: %d, smax: %d\n", pmax, smax);
 
-    Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "A");
-    Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, "B");
+    Block A(pmax, balance_low_bound, balance_up_bound, C, N, W, r, 0, 1, "A");
+    Block B(pmax, balance_low_bound, balance_up_bound, C, N, W, r, 0, 1, "B");
     int A_cell_num = 0, B_cell_num = 0;
     int cutnet = read_output_part(CELL_array, C, NET_array, N);
 

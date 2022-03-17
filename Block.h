@@ -8,9 +8,10 @@ class Block{
 public:
     int* Fdistribution, * Ldistribution;
     int* gain;
+    bool init_error;
 
-    Block(int init_pmax, double low_bound, double up_bound, int c, int n, int w, double r, std::string block_name)
-        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), size(0), name(block_name) {
+    Block(int init_pmax, double low_bound, double up_bound, int c, int n, int w, double r, int _block_num_lb, int _block_num_ub, std::string block_name)
+        : PMAX(init_pmax), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), block_num_lb(_block_num_lb), block_num_ub(_block_num_ub), size(0), name(block_name), init_error(true) {
         BUCKET = new Cell*[2 * PMAX + 1];
         
         for(int i = 0; i < 2 * PMAX + 1; i++)
@@ -64,11 +65,19 @@ public:
         else
             return false;
     }
+    bool check_block() const;
     bool bigger() const{
         if(size > R*W)
             return true;
         else
             return false;
+    }
+    void set_ubound(double _ubound) { ubound = _ubound; }
+    bool is_this_fixed_cell_here(int test_block_num){
+        if(block_num_lb <= test_block_num && test_block_num <= block_num_ub)
+            return true;
+        
+        return false;
     }
     ~Block(){
         delete[] (BUCKET - PMAX);
@@ -85,12 +94,15 @@ private:
     std::string name;
     const int C, N, W;
     const double R;
+    int block_num_ub, block_num_lb;
 };
 
 //VERSION1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C);
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_num);
 void BlockInitialization_r(Block &A, Block &B, Cell* CELL_array, int C);
+void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, int block_num, int bin_num = 0);
 
 //VERSION 2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);

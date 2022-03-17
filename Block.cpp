@@ -31,6 +31,8 @@ Block::Block(const Block& copy)
     for(int i = -PMAX; i <= PMAX; i++)
         BUCKET[i] = copy.BUCKET[i];
 
+        
+
     Fdistribution = new int[N + 1];
     Ldistribution = new int[N + 1];
     gain = new int[C + 1];
@@ -94,7 +96,7 @@ void Block::CalculateDistribution(Cell* CELL_array){
 
 void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implementation of the code prior to Proposition 2
     //printf("CellGainAdjust start\n");
-    
+
     int gain_adjust = 0;
     if(this == c.get_current_block()){ //if this block is F (from block)
         for(auto i = c.net_list.begin(); i != c.net_list.end(); i++){
@@ -176,9 +178,10 @@ Cell* Block::get_max_gain_cell() const{
 void Block::remove_from_BUCKET(Cell* cell){
     //printf("start remove_from_BUCKET\n");
 
-    if(this != cell->get_current_block())
+    if(this != cell->get_current_block()){
         printf("error on remove_from_BUCKET() of Block Class\n");
-
+        return;
+    }
     if(cell->BUCKETpre == nullptr){
         //printf("no BUCKETpre\n");
         BUCKET[gain[cell->get_cell_num()]] = cell->BUCKETnext;
@@ -255,6 +258,9 @@ void Block::increase_cell_gain(Cell* cell){
     //printf("update Cell %d gain!\n", cell->get_cell_num());
     //gain_update_count++;
 
+    if(cell->get_fixed())
+        return;
+
     if(cell->BUCKETpre == nullptr){
         //printf("no BUCKETpre\n");
         BUCKET[gain[cell->get_cell_num()]] = cell->BUCKETnext;
@@ -278,6 +284,7 @@ void Block::increase_cell_gain(Cell* cell){
     if(BUCKET[gain[cell->get_cell_num()]] != nullptr)
         BUCKET[gain[cell->get_cell_num()]]->BUCKETpre = cell;
 
+
     BUCKET[gain[cell->get_cell_num()]] = cell;
 
     if(max_gain < PMAX)
@@ -285,11 +292,15 @@ void Block::increase_cell_gain(Cell* cell){
     
     adjust_maxgain();
     //printf("end increase_cell_gain\n");
+
 }
 
 void Block::decrease_cell_gain(Cell* cell){
     //printf("start decrease_cell_gain\n");
     //gain_update_count++;
+
+    if(cell->get_fixed())
+        return;
 
     if(cell->BUCKETpre == nullptr){
         //printf("no BUCKETpre\n");
@@ -308,11 +319,13 @@ void Block::decrease_cell_gain(Cell* cell){
     cell->BUCKETnext = nullptr;
     gain[cell->get_cell_num()]--; 
     cell->BUCKETnext = BUCKET[gain[cell->get_cell_num()]];
+
     
     if(BUCKET[gain[cell->get_cell_num()]] != nullptr)
         BUCKET[gain[cell->get_cell_num()]]->BUCKETpre = cell;
 
     BUCKET[gain[cell->get_cell_num()]] = cell;
+
     adjust_maxgain();
 
     //printf("end decrease_cell_gain\n");
@@ -460,14 +473,36 @@ void Block::empty_BUCKET(){
         BUCKET[i] = nullptr;
 }
 
+bool Block::check_block() const{
+    Cell* head = BUCKET[max_gain];
+    
+    int current_gain = max_gain;
+
+    while(head != nullptr){
+        if(head->get_fixed())
+            return false;
+        head = head->BUCKETnext;
+
+        if(head == nullptr && current_gain > - PMAX){
+            while(head == nullptr && current_gain > -PMAX){
+            current_gain--;
+            head = BUCKET[current_gain];
+            }
+        }
+    }
+
+    return true;
+}
+
 //VERSION 1 ver 1
 //block의 사이즈도 여기서 계산해주어야 한다. BlockInitialization 실행 후 Reinitialization도 실행시켜주어야..
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     int i;
 
     for(i = 1; i <= C; i++){
-        if(!A.push_Cell_ub(CELL_array + i))
+        if(!A.push_Cell_ub(CELL_array + i)){
             break;
+        }
         //printf("push in A\n");
         //FreeCellList.push(CELL_array + i);
     }
@@ -482,8 +517,78 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     }
     //printf("end\n");
 
-    if(i == C)
-        printf("Error on BlockInitialization 1");
+    if(i == C){
+        if(!A.push_Cell_ub(CELL_array + i));{
+            printf("cell size: %d, A size: %d, A_ubound: %f, B_size: %d, B_ubound: %f\n", CELL_array[i].get_size(), A.get_size(), A.get_ubound(), B.get_size(), B.get_ubound());
+            printf("Error on Block Initialization 1, i: %d C: %d\n", i, C);
+        }
+    }
+}
+
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_num){
+    int i;
+    for(int i = 1; i <= C; i++){
+        if(CELL_array[i].get_fixed()){
+            if(A.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
+                if(!A.push_Cell_ub(CELL_array + i)){
+                    A.set_ubound(std::ceil(A.get_size() + CELL_array[i].get_size()));
+                    if(A.init_error){
+                        printf(".partial.part error in BlockInitialization on bin %d block A\n", bin_num);
+                        A.init_error = false;
+                    }
+                    if(!A.push_Cell_ub(CELL_array + i)){
+                        printf("set_ubound error in BlockInitialization\n");
+                    }
+                }
+            }
+            else if(B.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
+                if(!B.push_Cell_ub(CELL_array + i)){
+                    B.set_ubound(std::ceil(B.get_size() + CELL_array[i].get_size()));
+                    if(B.init_error){
+                        printf(".partial.part error in BlockInitialization on bin %d block B\n", bin_num);
+                        B.init_error = false;
+                    }
+                    if(!B.push_Cell_ub(CELL_array + i)){
+                        printf("set_ubound error in BlockInitialization\n");
+                    }
+                }
+            }
+            else{
+                printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+            }
+        }
+    }
+
+    for(i = 1; i <= C; i++){
+        if(CELL_array[i].get_fixed())
+            continue;
+
+        if(!A.push_Cell_ub(CELL_array + i)){
+            break;
+        }
+        //printf("push in A\n");
+        //FreeCellList.push(CELL_array + i);
+    }
+
+    //printf("%d th cell is on block B\n", i);
+
+    for(; i <= C; i++){
+        if(CELL_array[i].get_fixed())
+            continue;
+        
+        if(!B.push_Cell_ub(CELL_array + i))
+            break;
+        //printf("push in B\n");
+        //FreeCellList.push(CELL_array + i);
+    }
+    //printf("end\n");
+
+    if(i <= C){
+        if(!A.push_Cell_ub(CELL_array + i));{
+            printf("cell size: %d, A size: %d, A_ubound: %f, B_size: %d, B_ubound: %f\n", CELL_array[i].get_size(), A.get_size(), A.get_ubound(), B.get_size(), B.get_ubound());
+            printf("Error on Block Initialization 1, i: %d C: %d\n", i, C);
+        }
+    }
 }
 
 void BlockInitialization_r(Block &A, Block &B, Cell* CELL_array, int C){
@@ -596,6 +701,69 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     delete[] NET_check_array;
 }
 
+void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, int block_num, int bin_num){
+    int i;
+    int block_num_A = block_num / 2;
+    int block_num_B = block_num - block_num_A;
+
+    for(int i = 1; i <= C; i++){
+        if(CELL_array[i].get_fixed()){
+            if(A.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
+                if(!A.push_Cell_ub(CELL_array + i)){
+                    A.set_ubound(std::ceil(A.get_size() + CELL_array[i].get_size()));
+                    if(A.init_error){
+                        printf(".partial.part error in BlockInitialization on bin %d block A\n", bin_num);
+                        A.init_error = false;
+                    }
+                    if(!A.push_Cell_ub(CELL_array + i)){
+                        printf("set_ubound error in BlockInitialization\n");
+                    }
+                }
+            }
+            else if(B.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
+                if(!B.push_Cell_ub(CELL_array + i)){
+                    B.set_ubound(std::ceil(B.get_size() + CELL_array[i].get_size()));
+                    if(B.init_error){
+                        printf(".partial.part error in BlockInitialization on bin %d block B\n", bin_num);
+                        B.init_error = false;
+                    }
+                    if(!B.push_Cell_ub(CELL_array + i)){
+                        printf("set_ubound error in BlockInitialization\n");
+                    }
+                }
+            }
+            else{
+                printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+            }
+        }
+    }
+
+    for(i = 1; i <= C; i++){
+        if(i % block_num > 0 && i % block_num <= block_num_B){
+            if(CELL_array[i].get_fixed())
+                continue;
+            
+            if(!B.push_Cell_ub(CELL_array + i))
+                break;
+        }
+        else{
+            if(CELL_array[i].get_fixed())
+                continue;
+
+            if(!A.push_Cell_ub(CELL_array + i))
+                break;
+        }
+        //printf("push in A\n");
+        //FreeCellList.push(CELL_array + i);
+    }
+
+    //printf("%d th cell is on block B\n", i);
+    //printf("end\n");
+
+    if(i != C + 1)
+        printf("Error on BlockInitialization 1");
+}
+
 //implementation of the code prior to Proposition 2
 //first empty_BUCEKT()
 void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET_array, int pass){
@@ -624,6 +792,12 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
         for(int i = bias + 1; i <= C; i++){
             ctemp = CELL_array + i;
 
+            if(ctemp->get_fixed()){
+                ctemp->BUCKETnext = nullptr;
+                ctemp->BUCKETpre = nullptr;
+                ctemp->locked = true;
+                continue;
+            }
             ctemp->locked = false;
 
             A.CellGainInitialization(B, *ctemp);
@@ -632,6 +806,13 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
 
         for(int i = 1; i <= bias; i++){
             ctemp = CELL_array + i;
+
+            if(ctemp->get_fixed()){
+                ctemp->BUCKETnext = nullptr;
+                ctemp->BUCKETpre = nullptr;
+                ctemp->locked = true;
+                continue;
+            }
 
             ctemp->locked = false;
 
@@ -643,6 +824,13 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
         for(int i = C; i >= bias + 1; i--){
             ctemp = CELL_array + i;
 
+            if(ctemp->get_fixed()){
+                ctemp->BUCKETnext = nullptr;
+                ctemp->BUCKETpre = nullptr;
+                ctemp->locked = true;
+                continue;
+            }
+
             ctemp->locked = false;
 
             A.CellGainInitialization(B, *ctemp);
@@ -652,12 +840,19 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
         for(int i = bias; i >= 1; i--){
             ctemp = CELL_array + i;
 
+            if(ctemp->get_fixed()){
+                ctemp->BUCKETnext = nullptr;
+                ctemp->BUCKETpre = nullptr;
+                ctemp->locked = true;
+                continue;
+            }
+
             ctemp->locked = false;
 
             A.CellGainInitialization(B, *ctemp);
             B.CellGainInitialization(A, *ctemp);
         }
-    }
+    }    
     
     /*
     if(pass % 64 < 20){
@@ -717,7 +912,6 @@ Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
     max_gain_cellA = A.get_max_gain_cell();
     max_gain_cellB = B.get_max_gain_cell();
 
-    get_max_gain_cell_time += (clock() - (double)get_max_gain_cell_time_temp);
 
 
     if(max_gain_cellA == nullptr && max_gain_cellB == nullptr)
@@ -902,9 +1096,13 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
         T.Ldistribution[(*i)->get_net_num()]++;
     }
 
+
     BaseCell->set_current_block(&T);
     F.add_size(-BaseCell->get_size());
     T.add_size(BaseCell->get_size());
+
+
+    //printf("cell 7 gain: %d %d\n", F.gain[7], T.gain[7]);
 
     for(auto i = BaseCell->net_list.begin(); i != BaseCell->net_list.end(); i++){
         if(F.Ldistribution[(*i)->get_net_num()] == 0){
@@ -918,6 +1116,8 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
             }
         }
     }
+
+    
 
     //printf("end MoveCell\n");
 }

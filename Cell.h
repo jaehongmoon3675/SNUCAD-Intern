@@ -9,8 +9,9 @@ public:
     std::list<Net *> net_list;
     bool locked;
     Cell* BUCKETpre, * BUCKETnext;
+    std::vector<int> Cell_set;
 
-    Cell() : size(1), pin(0), cell_num(0), current_block_num(0), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()) {}
+    Cell() : size(1), pin(0), cell_num(0), current_block_num(0), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()), fixed(false) {}
     void push_net(Net *n){
         net_list.push_back(n);
         pin++;
@@ -47,6 +48,8 @@ public:
     void set_current_block_num(int _current_block_num) { current_block_num = _current_block_num; }
     std::string get_cell_name() const { return name; }
     void print_Cell();
+    void set_fixed(bool _fixed) { fixed = _fixed; }
+    bool get_fixed() const { return fixed; }
     void get_net_list(int* distribution); //add the distribution of net list to the array 'distribution'
     ~Cell(){
     }
@@ -58,13 +61,9 @@ protected:
     int current_block_num;
     Block* CurrentBlock;
     std::string name;
+    bool fixed;
 };
 
 void printCellInfo(Cell* CELL_array, int C);
-
-class Cell_BIN : public Cell{
-public:
-    std::vector<int> Cell_set;
-};
 
 #endif

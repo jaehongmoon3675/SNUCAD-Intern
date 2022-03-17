@@ -124,7 +124,7 @@ int read_hgr_area(const int C, Cell* &CELL_array, std::string _filename){
 
 void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n, int map_m, std::vector<int> *BIN_array){
     std::ifstream readFile;
-    std::string filename = _filename + ".place";
+    std::string filename = _filename + ".def.place";
     readFile.open(filename);
 
     int ll_x, ll_y, ur_x, ur_y;
@@ -169,6 +169,130 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
         printf("error for reading place file\n");
 }
 
+void check_place(const int C, Cell* CELL_array, std::string _filename, int map_n, int map_m){
+    std::ifstream readFile;
+    std::string filename = _filename + ".def.place";
+    readFile.open(filename);
+
+    int ll_x, ll_y, ur_x, ur_y;
+
+    //printf("read_hgr\n");
+
+    if(readFile.is_open()){
+        char c;
+        int temp_cell;
+        int cell_x, cell_y;
+        int cell_bin;
+        std::string cell_name;
+
+        readFile >> ll_x >> ll_y >> ur_x >> ur_y;
+        readFile.get(c);
+
+        double bin_x_length = (double)(ur_x - ll_x) / map_m;
+        double bin_y_length = (double)(ur_y - ll_y) / map_n;
+
+        for(int i = 1; i <= C; i++){         
+                readFile >> temp_cell >> cell_name >> cell_x >> cell_y;
+
+                cell_bin = (int)((cell_y - ll_y) / bin_y_length) * map_m + (int)((cell_x - ll_x) / bin_x_length);
+
+                assert(cell_bin < map_n * map_m);
+
+                if(cell_bin != CELL_array[i].get_bin())
+                    printf("bin error!\n");
+
+                if(readFile.eof())
+                    break;
+                
+                readFile.get(c);
+
+                if(readFile.eof())
+                    break;
+        }
+
+        readFile.close();
+    }
+    else
+        printf("error for reading place file\n");
+}
+
+
+//cell의 순서가 .def.place와 완전히 동일하다고 가정
+void read_partial_part(const int C, Cell* &CELL_array, std::string filename){
+    std::ifstream readFile;
+    readFile.open(filename +".partial.part");
+
+    //printf("read_hgr_map\n");
+
+    int block;
+    std::string temp_cell_name;
+
+    if(readFile.is_open()){
+        for(int i = 1; i <= C; i++){
+            readFile >> temp_cell_name >> block;
+            
+            while(CELL_array[i].get_cell_name() != temp_cell_name){
+                i++;
+
+                if(i > C)
+                    break;
+            }
+
+            if(i > C)
+                break;
+
+            CELL_array[i].set_current_block_num(block);
+            CELL_array[i].set_fixed(true);
+
+            if(readFile.eof())
+                break;
+        }
+
+        readFile.close();
+    }
+    else
+        printf("No .partial.part file\n");
+}
+
+void check_partial_part(const int C, Cell* &CELL_array, std::string filename){
+    std::ifstream readFile;
+    readFile.open(filename +".partial.part");
+
+    int block;
+    std::string temp_cell_name;
+    int count = 0;
+
+    if(readFile.is_open()){
+        for(int i = 1; i <= C; i++){
+            readFile >> temp_cell_name >> block;
+            
+            while(CELL_array[i].get_cell_name() != temp_cell_name){
+                i++;
+
+                if(i > C)
+                    break;
+            }
+
+            if(i > C)
+                break;
+
+            if(CELL_array[i].get_current_block_num() != block){
+                printf("cell %d error! %d %d\n", i, CELL_array[i].get_current_block_num(), block);
+                count++;
+            }
+
+            if(readFile.eof())
+                break;
+        }
+
+        readFile.close();
+    }
+    else
+        printf("No .partial.part file\n");
+
+    printf("count: %d\n", count);
+}
+
 void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
     std::ifstream readFile;
     readFile.open("ldpc.part");
@@ -195,5 +319,5 @@ void read_output_part(Block &A, Block &B, const int C, Cell* &CELL_array){
         readFile.close();
     }
     else
-        printf("No map file\n");
+        printf("No part file\n");
 }
