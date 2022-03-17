@@ -581,15 +581,18 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     if(next_step_1 > 1){
         total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_1, &A, skew, bias + next_step_2, alternate);
         for(int i = 1; i <= C; i++){
-            if(GlobalMinDist[i] == 1)
-                _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+            if(GlobalMinDist[i] == 1){
+                if(!_CELL_array[current_to_past[i]].get_fixed())
+                    _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+            }
                 //_CELL_array[current_to_past[i]].set_current_block_num(bias + CELL_array[i].get_current_block_num());
         }
     }
     else{
         for(int i = 1; i <= C; i++){
             if(GlobalMinDist[i] == 1)
-                _CELL_array[current_to_past[i]].set_current_block_num(bias + next_step_2);
+                if(!_CELL_array[current_to_past[i]].get_fixed())
+                    _CELL_array[current_to_past[i]].set_current_block_num(bias + next_step_2);
         }
         //printf("Block %d area: %d, cell_num: %d\n", bias + next_step_2, A.get_size(), A.get_cell_num(CELL_array, C));      
     }
@@ -598,14 +601,16 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
         total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_2, &B, skew, bias, alternate);
         for(int i = 1; i <= C; i++){
             if(GlobalMinDist[i] == 0)
-                _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+                if(!_CELL_array[current_to_past[i]].get_fixed())
+                    _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
                 //_CELL_array[current_to_past[i]].set_current_block_num(bias + CELL_array[i].get_current_block_num());
         }
     }
     else{
         for(int i = 1; i <= C; i++){
             if(GlobalMinDist[i] == 0)
-                _CELL_array[current_to_past[i]].set_current_block_num(bias);
+                if(!_CELL_array[current_to_past[i]].get_fixed())
+                    _CELL_array[current_to_past[i]].set_current_block_num(bias);
         }
         //printf("Block %d area: %d, cell_num: %d\n", bias, B.get_size(), B.get_cell_num(CELL_array, C));      
     }

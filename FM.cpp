@@ -29,7 +29,7 @@ int main(){
 
     std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
 
-    const int block_num = 2;
+    const int block_num = 4;
     const int InitVer = 1;
     const int pass = 10;
     const double skew = 0.05;
