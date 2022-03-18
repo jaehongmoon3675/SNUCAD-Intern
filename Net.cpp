@@ -50,11 +50,21 @@ int Net::adjust_overlap(bool** map, int ll_x, int ll_y){
 }
 
 void Net::adjust_weight(int max_overlap, int alpha_tune){
+    if(size == 0)
+        weight = 0;
+    else if(overlap_net){
+        weight = weight = 1 + ((max_overlap + 1 - overlap) * (ALPHA - alpha_tune)) / (max_overlap + 1);
+    }
+    else
+        weight = alpha_tune + 1;
+
+    /*
     if(overlap == 0){
         weight = (max_overlap * alpha_tune) / ALPHA;
     }
     else
         weight = 1 + (max_overlap - overlap);
+    */
 }
 
 int Net::count_overlap(bool** map, int ll_x, int ll_y, const int block_num) const {

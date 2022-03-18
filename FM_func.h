@@ -23,4 +23,6 @@ int calculate_degree(Cell* &CELL_array, int C, Net* NET_array, int N, int block_
 
 int CountOverlap(bool **map, int N, Net *NET_array, int ll_x, int ll_y, int ur_x, int ur_y, int block_num);
 
+int CalculateTotalOverlap(Net* NET_array, int N, int block_num);
+
 #endif

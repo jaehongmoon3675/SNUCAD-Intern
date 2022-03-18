@@ -13,7 +13,7 @@ public:
     bool init_error;
 
     Block(int init_pmax, double low_bound, double up_bound, int c, int n, int w, double r, int _block_num_lb, int _block_num_ub, std::string block_name)
-        : PMAX(init_pmax * ALPHA), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), block_num_lb(_block_num_lb), block_num_ub(_block_num_ub), size(0), name(block_name), init_error(true) {
+        : PMAX(10 * init_pmax * ALPHA), max_gain(-PMAX), lbound(low_bound), ubound(up_bound), C(c), N(n), W(w), R(r), block_num_lb(_block_num_lb), block_num_ub(_block_num_ub), size(0), name(block_name), init_error(true) {
         BUCKET = new Cell*[2 * PMAX + 1];
         
         for(int i = 0; i < 2 * PMAX + 1; i++)

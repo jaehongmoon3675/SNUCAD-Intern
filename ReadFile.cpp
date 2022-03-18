@@ -10,7 +10,7 @@
 #include "Net.h"
 #include "Block.h"
 
-int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array, std::string _filename){
+int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array, std::string _filename, int x_length, int y_length){
     int pin_num = 0;
     std::ifstream readFile;
     std::string filename = _filename + ".def.hgr";
@@ -25,7 +25,7 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array, std::string _fi
         readFile >> N >> C;
         readFile.get(c);
 
-        NET_array = new Net[N + 1];
+        NET_array = new Net[N + 1 + x_length * y_length];
         CELL_array = new Cell[C + 1];
 
         for(int i = 1; i <= C; i++)
@@ -60,6 +60,11 @@ int read_hgr(int &N, int &C, Net* &NET_array, Cell* &CELL_array, std::string _fi
                 if(readFile.eof())
                     break;
             }while(readFile.peek() != '\n');
+        }
+
+        for(int i = N + 1; i <= N + x_length * y_length; i++){
+            NET_array[i].set_net_num(i);
+            NET_array[i].overlap_net = true;
         }
 
         readFile.close();
@@ -191,6 +196,9 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
         _ur_x = ur_x;
         _ur_y = ur_y;
 
+        if(CELL_array == nullptr)
+            return;
+
         readFile.get(c);
 
         double bin_x_length = (double)(ur_x - ll_x) / map_m;
@@ -230,6 +238,83 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
         printf("error for reading place file\n");
 }
 
+void read_place(const int C, Cell* CELL_array, const int _N, const int N, Net* NET_array, std::string _filename, int map_n, int map_m, std::vector<int> *BIN_array, int &_ll_x, int &_ll_y, int &_ur_x, int &_ur_y, int overlap_x, int overlap_y){
+    std::ifstream readFile;
+    std::string filename = _filename + ".def.scaled0.707.place";
+    readFile.open(filename);
+
+    double ll_x, ll_y, ur_x, ur_y;
+    int x_scale, y_scale;
+    int tight = 10;
+
+    //printf("read_hgr\n");
+
+    if(readFile.is_open()){
+        char c;
+        int temp_cell;
+        double cell_x, cell_y;
+        int cell_bin;
+        std::string cell_name;
+
+        readFile >> ll_x >> ll_y >> ur_x >> ur_y;
+        _ll_x = ll_x;
+        _ll_y = ll_y;
+        _ur_x = ur_x;
+        _ur_y = ur_y;
+
+        x_scale = (ur_x - ll_x) / (overlap_x + 1);
+        y_scale = 1;
+
+        if(CELL_array == nullptr)
+            return;
+
+        readFile.get(c);
+
+        double bin_x_length = (double)(ur_x - ll_x) / map_m;
+        double bin_y_length = (double)(ur_y - ll_y) / map_n;
+
+        int overlap_criteria;
+
+        for(int i = 1; i <= C; i++){         
+                readFile >> temp_cell >> cell_name >> cell_x >> cell_y;
+
+                cell_bin = (int)((cell_y - ll_y) / bin_y_length) * map_m + (int)((cell_x - ll_x) / bin_x_length);
+
+                assert(cell_bin < map_n * map_m);
+
+                overlap_criteria = (((cell_x + (double)x_scale / (tight + 5)) + (double)CELL_array[i].get_size() * 0.707 + 0.5) / x_scale);
+
+                if(overlap_criteria > (((int)cell_x) / x_scale)){
+                    NET_array[_N + (int)cell_y * overlap_x + overlap_criteria].push_cell(CELL_array + i);
+                    CELL_array[i].push_net(NET_array + _N + (int)cell_y * overlap_x + overlap_criteria);
+                }
+
+                CELL_array[i].set_bin(cell_bin);
+                CELL_array[i].set_ll(cell_x, cell_y);
+                BIN_array[cell_bin].push_back(i);
+
+                if(readFile.eof())
+                    break;
+                
+                readFile.get(c);
+
+                if(readFile.eof())
+                    break;
+        }
+        /*
+        printf("bin test\n");
+        for(int i = 1; i <= C; i++){
+            if(CELL_array[i].get_bin() == -1)
+                printf("error1\n");
+        }
+        for(int i = 0; i < map_n * map_m; i++)
+            printf("Bin %d size: %ld\n", i, BIN_array[i].size());
+        */
+        readFile.close();
+    }
+    else
+        printf("error for reading place file\n");
+}
 
 void check_place(const int C, Cell* CELL_array, std::string _filename, int map_n, int map_m){
     std::ifstream readFile;

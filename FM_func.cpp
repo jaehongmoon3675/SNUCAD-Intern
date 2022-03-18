@@ -736,6 +736,7 @@ void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Ce
                 temp_cell_num = past_to_current[(*itr)->get_cell_num()];
                 NET_array[j].push_cell(CELL_array + temp_cell_num);
                 CELL_array[temp_cell_num].push_net(NET_array + j);
+                pin_num++;
             }
         }
     }
@@ -783,7 +784,7 @@ void bin_based_FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NE
         current_to_past = new int[C + 1];
         read_bin_record(_N, _C, _NET_array, _CELL_array, N, C, NET_array, CELL_array, i, P, W, current_to_past);
 
-        cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, false, i);
+        cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P * block_num, W, block_num, nullptr, skew, 0, false, i);
 
         printf("bin %d cutnet: %d\n", i, cutnet);
 
@@ -1148,6 +1149,28 @@ int CountOverlap(bool **map, int N, Net *NET_array, int ll_x, int ll_y, int ur_x
     }
 
     printf("Total overlap: %d\n", overlap_count);
+
+    return overlap_count;
+}
+
+int CalculateTotalOverlap(Net* NET_array, int N, int block_num){
+    bool* block_check = new bool[block_num];
+    int overlap_count = 0;
+
+    for(int i = 1; i <= N; i++){
+        for(int i = 0; i < block_num; i++)
+            block_check[i] = false;
+        
+        for(auto itr = NET_array[i].cell_list.begin(); itr != NET_array[i].cell_list.end(); itr++){
+            if(block_check[(*itr)->get_current_block_num()])
+                overlap_count++;
+            else
+                block_check[(*itr)->get_current_block_num()] = true;
+
+        }
+    }
+
+    delete[] block_check;
 
     return overlap_count;
 }

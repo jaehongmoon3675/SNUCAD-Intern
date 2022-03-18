@@ -20,27 +20,31 @@ int ALPHA = 100;
 //stuck check에 유의
 
 int main(){
-    int N, C; //the num of net and cell, respectively
+    int _N, N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     bool bin_area_print = true;
 
     int ll_x, ll_y, ur_x, ur_y;
 
     //세로가 n, 가로는 m
-    const int map_n = 2;
-    const int map_m = 2;
+    const int map_n = 1;
+    const int map_m = 1;
     printf("map_n: %d, map_m: %d\n", map_n, map_m);
+    int tight = 5; //tight이 커질수록 overlap에 대한 정밀도가 낮아짐...
+    int overlap_x, overlap_y;
+    int alpha_tune = 100;
+    //alpha_tune이 커질수록 overlap 줄고 cutnet 는다
 
     std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
 
-    const int block_num = 10;
+    const int block_num = 4;
     const int InitVer = 1;
     const int pass = 10;
     const double skew = 0.05;
 
     //printf("map_n: %d, map_m: %d, block_num: %d, pass: %d, skew: %.2f\n", map_n, map_m, block_num, pass, skew);
   
-    const int file_num = 3;
+    const int file_num = 2;
     const std::string file_name_arr[8] = {"aes_128", "ldpc", "jpeg", "wb_dma", "ecg", "ac97", "nova", "tate_pairing"};
     std::string file_name = file_name_arr[file_num];
     Net* NET_array = nullptr;
@@ -51,13 +55,31 @@ int main(){
 
     start = clock();
 
-    P = read_hgr(N, C, NET_array, CELL_array, file_name);
+    read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
+    overlap_x = (ur_x - ll_x) / (2 * tight);
+    overlap_y = ur_y - ll_y + 2; //overlap_y의 scale은 항상 1이 되도록 하자.
+    P = read_hgr(_N, C, NET_array, CELL_array, file_name, overlap_x, overlap_y);
     read_hgr_map(C, CELL_array, file_name);
     W = read_hgr_area(C, CELL_array, file_name);
     //read_place(C, CELL_array, file_name, map_n, map_m, BIN_array);
-    read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
+    N = _N + overlap_x * overlap_y;
+    read_place(C, CELL_array, _N, N, NET_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y, overlap_x, overlap_y);
     read_partial_part(C, CELL_array, file_name);
+    
+    int overlap_count = 0;
+    int overlap_max = 0;
+    for(int i = _N + 1; i <= N; i++){
+        overlap_count += NET_array[i].get_cell_count();
+        if(overlap_max <= NET_array[i].get_cell_count())
+            overlap_max = NET_array[i].get_cell_count();
+    }
 
+    printf("overlap count: %d\n", overlap_count);
+
+    for(int i = 1; i <= N; i++)
+        NET_array[i].adjust_weight(overlap_max, alpha_tune);
+
+    /*
     bool **map = new bool*[ur_x - ll_x + 1];
     
     for(int i = 0; i <= ur_x -ll_x; i++){
@@ -83,7 +105,7 @@ int main(){
 
     for(int i = 1; i <= N; i++)
         NET_array[i].adjust_weight(overlap_max, 50);
-
+    */
 
     bin_based_FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, skew, map_n, map_m, BIN_array);
     printf("bin_based finish\n");
@@ -273,15 +295,16 @@ int main(){
 
     //int cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, true);
     cutnet;
-    degree = calculate_degree(CELL_array, C, NET_array, N, block_num, cutnet);
+    degree = calculate_degree(CELL_array, C, NET_array, _N, block_num, cutnet);
     //printf("\ncutnet: %d, degree: %d\n", cutnet, degree);
 
     write_output(CELL_array, C, file_name, map_n, map_m, block_num, InitVer, pass);
-    check_partial_part(C, CELL_array, file_name);
+    //check_partial_part(C, CELL_array, file_name);
+    overlap_count = CalculateTotalOverlap(NET_array + _N, overlap_x * overlap_y, block_num);
     //check_place(C, CELL_array, file_name, map_n,  map_m);
 
-    printf("cutnet: %d, degree: %d\n", cutnet, degree);
-    CountOverlap(map, N, NET_array, ll_x, ll_y, ur_x, ur_y, block_num);
+    printf("cutnet: %d, degree: %d, overlap: %d\n", cutnet, degree, overlap_count);
+    //CountOverlap(map, N, NET_array, ll_x, ll_y, ur_x, ur_y, block_num);
 
     delete[] NET_array;
     delete[] CELL_array;
@@ -293,12 +316,13 @@ int main(){
     delete[] bin_block_area;
     delete[] block_area;
 
+    /*
     for(int i = 0; i <= ur_x -ll_x; i++){
         delete map[i];
     }
 
     delete[] map;
-
+    */
     end = clock();
     total_time = (double)end - start;
 

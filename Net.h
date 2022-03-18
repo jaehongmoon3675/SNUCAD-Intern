@@ -7,8 +7,9 @@ class Block;
 class Net{
 public:
     std::list<Cell*> cell_list;
+    bool overlap_net;
 
-    Net() : net_num(0), size(0), cell_count(0), cut_state(false), activate(true), current_block(nullptr), cell_list(std::list<Cell*>()), weight(1), overlap(0) {}
+    Net() : net_num(0), size(0), cell_count(0), cut_state(false), activate(true), current_block(nullptr), cell_list(std::list<Cell*>()), weight(1), overlap(0), overlap_net(false) {}
     void push_cell(Cell* c){
         cell_list.push_back(c);
         size += c->get_size();
