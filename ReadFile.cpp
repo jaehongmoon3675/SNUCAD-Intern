@@ -190,7 +190,7 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
         _ll_y = ll_y;
         _ur_x = ur_x;
         _ur_y = ur_y;
-        
+
         readFile.get(c);
 
         double bin_x_length = (double)(ur_x - ll_x) / map_m;
@@ -204,6 +204,7 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
                 assert(cell_bin < map_n * map_m);
 
                 CELL_array[i].set_bin(cell_bin);
+                CELL_array[i].set_ll(cell_x, cell_y);
                 BIN_array[cell_bin].push_back(i);
 
                 if(readFile.eof())

@@ -51,6 +51,7 @@ public:
     void set_fixed(bool _fixed) { fixed = _fixed; }
     bool get_fixed() const { return fixed; }
     void get_net_list(int* distribution); //add the distribution of net list to the array 'distribution'
+    void set_ll(int _ll_x, int _ll_y) { ll_x = _ll_x, ll_y = _ll_y; }
     ~Cell(){
     }
 protected:
@@ -62,6 +63,8 @@ protected:
     Block* CurrentBlock;
     std::string name;
     bool fixed;
+    int ll_x;
+    int ll_y;
 };
 
 void printCellInfo(Cell* CELL_array, int C);
