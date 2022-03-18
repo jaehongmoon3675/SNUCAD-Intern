@@ -688,6 +688,16 @@ void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Ce
 
     int* past_to_current = new int[_C + 1];
 
+    /*
+    printf("test1\n");
+    int c_count = 0;
+    for(int i = 1; i <= _C; i++){
+        if(_CELL_array[i].get_bin() == current_bin)
+            c_count++;
+    }
+    if(c_count != C)
+        printf("fail %d %d\n", c_count, C);
+    */
     int j = 1;
     for(int i = 1; i <= _C; i++){
         if(_CELL_array[i].get_bin() != current_bin)
@@ -699,6 +709,7 @@ void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Ce
         CELL_array[j].set_name(_CELL_array[i].get_cell_name());
         CELL_array[j].set_fixed(_CELL_array[i].get_fixed());
         CELL_array[j].set_current_block_num(_CELL_array[i].get_current_block_num());
+        CELL_array[j].set_bin(current_bin);
 
         past_to_current[i] = j;
         current_to_past[j] = i;
@@ -729,6 +740,19 @@ void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Ce
         }
     }
 
+    /*
+    printf("bin_size_test\n");
+    int test_size = 0;
+    for(int i = 1; i <= C; i++){
+        test_size += CELL_array[i].get_size();
+
+        if(CELL_array[i].get_bin() == -1)
+            printf("wrong1\n");
+    }
+
+    if(test_size != total_weight)
+        printf("wrong2!\n");
+    */
     delete[] past_to_current;
 }
 
@@ -774,6 +798,13 @@ void bin_based_FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NE
         delete[] current_to_past;
     }
 
+    /*
+    printf("bin test\n");
+    for(int i = 1; i <= C; i++){
+        if(_CELL_array[i].get_bin() == -1)
+            printf("error");
+    }
+    */
     delete[] net_in_bin;
 }
 

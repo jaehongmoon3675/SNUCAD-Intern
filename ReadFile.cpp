@@ -215,7 +215,15 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
                 if(readFile.eof())
                     break;
         }
-
+        /*
+        printf("bin test\n");
+        for(int i = 1; i <= C; i++){
+            if(CELL_array[i].get_bin() == -1)
+                printf("error1\n");
+        }
+        for(int i = 0; i < map_n * map_m; i++)
+            printf("Bin %d size: %ld\n", i, BIN_array[i].size());
+        */
         readFile.close();
     }
     else

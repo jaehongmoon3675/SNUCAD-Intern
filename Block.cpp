@@ -518,8 +518,8 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C){
     }
     //printf("end\n");
 
-    if(i == C){
-        if(!A.push_Cell_ub(CELL_array + i));{
+    if(i <= C){
+        if(!A.push_Cell_ub(CELL_array + i)){
             printf("cell size: %d, A size: %d, A_ubound: %f, B_size: %d, B_ubound: %f\n", CELL_array[i].get_size(), A.get_size(), A.get_ubound(), B.get_size(), B.get_ubound());
             printf("Error on Block Initialization 1, i: %d C: %d\n", i, C);
         }
@@ -532,7 +532,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
         if(CELL_array[i].get_fixed()){
             if(A.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
                 if(!A.push_Cell_ub(CELL_array + i)){
-                    A.set_ubound(std::ceil(A.get_size() + CELL_array[i].get_size()));
+                    A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
                         printf(".partial.part error in BlockInitialization on bin %d block A\n", bin_num);
                         A.init_error = false;
@@ -544,7 +544,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
             }
             else if(B.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
                 if(!B.push_Cell_ub(CELL_array + i)){
-                    B.set_ubound(std::ceil(B.get_size() + CELL_array[i].get_size()));
+                    B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
                         printf(".partial.part error in BlockInitialization on bin %d block B\n", bin_num);
                         B.init_error = false;
@@ -587,7 +587,14 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
     if(i <= C){
         if(!A.push_Cell_ub(CELL_array + i));{
             printf("cell size: %d, A size: %d, A_ubound: %f, B_size: %d, B_ubound: %f\n", CELL_array[i].get_size(), A.get_size(), A.get_ubound(), B.get_size(), B.get_ubound());
-            printf("Error on Block Initialization 1, i: %d C: %d\n", i, C);
+            int total_size = 0;
+            for(int j = 1; j <= C; j++){
+                total_size += CELL_array[j].get_size();
+                if(CELL_array[j].get_bin() != bin_num)
+                    printf("Who are you..\n");
+            }
+            printf("total size: %d\n", total_size);
+            printf("Error on Block Initialization 1 in bin %d, i: %d C: %d\n", bin_num, i, C);
         }
     }
 }
@@ -613,7 +620,7 @@ void BlockInitialization_r(Block &A, Block &B, Cell* CELL_array, int C){
     //printf("end\n");
 
     if(i == C)
-        printf("Error on BlockInitialization 1");
+        printf("Error on BlockInitialization_r 1\n");
 }
 
 //ver2
@@ -711,7 +718,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
         if(CELL_array[i].get_fixed()){
             if(A.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
                 if(!A.push_Cell_ub(CELL_array + i)){
-                    A.set_ubound(std::ceil(A.get_size() + CELL_array[i].get_size()));
+                    A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
                         printf(".partial.part error in BlockInitialization on bin %d block A\n", bin_num);
                         A.init_error = false;
@@ -723,7 +730,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
             }
             else if(B.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
                 if(!B.push_Cell_ub(CELL_array + i)){
-                    B.set_ubound(std::ceil(B.get_size() + CELL_array[i].get_size()));
+                    B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
                         printf(".partial.part error in BlockInitialization on bin %d block B\n", bin_num);
                         B.init_error = false;
@@ -734,7 +741,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
                 }
             }
             else{
-                printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+                //printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
             }
         }
     }
@@ -762,7 +769,10 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
     //printf("end\n");
 
     if(i != C + 1)
-        printf("Error on BlockInitialization 1");
+        if(!A.push_Cell_ub(CELL_array + i)){
+            printf("cell size: %d, A size: %d, A_ubound: %f, B_size: %d, B_ubound: %f\n", CELL_array[i].get_size(), A.get_size(), A.get_ubound(), B.get_size(), B.get_ubound());
+            printf("Error on Block Initialization 1, i: %d C: %d\n", i, C);
+        }
 }
 
 //implementation of the code prior to Proposition 2

@@ -11,7 +11,7 @@ public:
     Cell* BUCKETpre, * BUCKETnext;
     std::vector<int> Cell_set;
 
-    Cell() : size(1), pin(0), cell_num(0), current_block_num(0), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()), fixed(false) {}
+    Cell() : size(1), pin(0), cell_num(0), current_block_num(0), BUCKETpre(nullptr), BUCKETnext(nullptr), CurrentBlock(nullptr), locked(false), net_list(std::list<Net*>()), fixed(false), bin(-1) {}
     void push_net(Net *n){
         net_list.push_back(n);
         pin++;
