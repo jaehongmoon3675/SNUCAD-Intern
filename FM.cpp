@@ -30,21 +30,21 @@ int main(){
     const int map_n = 1;
     const int map_m = 1;
     printf("map_n: %d, map_m: %d\n", map_n, map_m);
-    int tight = 5; //tight이 커질수록 overlap에 대한 정밀도가 낮아짐...
+    int tight = 2; //tight이 커질수록 overlap에 대한 정밀도가 낮아짐...
     int overlap_x, overlap_y;
     int alpha_tune = 100;
-    //alpha_tune이 커질수록 overlap 줄고 cutnet 는다
+    //alpha_tune이 커질수록 overlap늘고 cutnet 준다
 
     std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
 
-    const int block_num = 4;
+    const int block_num = 2;
     const int InitVer = 1;
     const int pass = 10;
     const double skew = 0.05;
 
     //printf("map_n: %d, map_m: %d, block_num: %d, pass: %d, skew: %.2f\n", map_n, map_m, block_num, pass, skew);
   
-    const int file_num = 2;
+    const int file_num = 6;
     const std::string file_name_arr[8] = {"aes_128", "ldpc", "jpeg", "wb_dma", "ecg", "ac97", "nova", "tate_pairing"};
     std::string file_name = file_name_arr[file_num];
     Net* NET_array = nullptr;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <list>
 #include <vector>
+#include <cmath>
 
 #include "Cell.h"
 #include "Net.h"
@@ -50,13 +51,13 @@ int Net::adjust_overlap(bool** map, int ll_x, int ll_y){
 }
 
 void Net::adjust_weight(int max_overlap, int alpha_tune){
-    if(size == 0)
+    if(cell_count == 0)
         weight = 0;
     else if(overlap_net){
-        weight = weight = 1 + ((max_overlap + 1 - overlap) * (ALPHA - alpha_tune)) / (max_overlap + 1);
+        weight = ((std::sqrt(max_overlap + 1 - overlap) + max_overlap / 2) * (ALPHA - alpha_tune));
     }
     else
-        weight = alpha_tune + 1;
+        weight = alpha_tune / 10 + 1;
 
     /*
     if(overlap == 0){
