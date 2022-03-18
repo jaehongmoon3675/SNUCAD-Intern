@@ -1,7 +1,7 @@
 #ifndef __BLOCK_H__
 #define __BLOCK_H__
 
-#define ALPHA 100
+extern int ALPHA;
 
 #include "Cell.h"
 #include "Net.h"

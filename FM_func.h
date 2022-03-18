@@ -21,4 +21,6 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
 void bin_based_FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, const int _C, const int _N, const int _P, const int _W, const int block_num, double skew, int map_n, int map_m, std::vector<int> *BIN_array);
 int calculate_degree(Cell* &CELL_array, int C, Net* NET_array, int N, int block_num, int &cutnet);
 
+int CountOverlap(bool **map, int N, Net *NET_array, int ll_x, int ll_y, int ur_x, int ur_y, int block_num);
+
 #endif

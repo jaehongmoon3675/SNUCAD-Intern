@@ -15,12 +15,16 @@
 #include "CellDist.h"
 #include "WriteFile.h"
 
+int ALPHA = 100;
+
 //stuck check에 유의
 
 int main(){
     int N, C; //the num of net and cell, respectively
     int P, W; //P: total pin num, W: total weight
     bool bin_area_print = true;
+
+    int ll_x, ll_y, ur_x, ur_y;
 
     //세로가 n, 가로는 m
     const int map_n = 2;
@@ -29,7 +33,7 @@ int main(){
 
     std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
 
-    const int block_num = 4;
+    const int block_num = 10;
     const int InitVer = 1;
     const int pass = 10;
     const double skew = 0.05;
@@ -37,7 +41,7 @@ int main(){
     //printf("map_n: %d, map_m: %d, block_num: %d, pass: %d, skew: %.2f\n", map_n, map_m, block_num, pass, skew);
   
     const int file_num = 3;
-    const std::string file_name_arr[4] = {"aes_128", "ldpc", "jpeg", "initPlace"};
+    const std::string file_name_arr[8] = {"aes_128", "ldpc", "jpeg", "wb_dma", "ecg", "ac97", "nova", "tate_pairing"};
     std::string file_name = file_name_arr[file_num];
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
@@ -51,10 +55,35 @@ int main(){
     read_hgr_map(C, CELL_array, file_name);
     W = read_hgr_area(C, CELL_array, file_name);
     read_place(C, CELL_array, file_name, map_n, map_m, BIN_array);
+    read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
     read_partial_part(C, CELL_array, file_name);
 
+    bool **map = new bool*[ur_x - ll_x + 1];
+    
+    for(int i = 0; i <= ur_x -ll_x; i++){
+        map[i] = new bool[ur_y - ll_y + 1];
+
+        for(int j = 0; j <= ur_y - ll_y + 1; j++)
+            map[i][j] = false;
+    }
+
+    int overlap_max = 0;
+    int overlap_temp = 0;
+
+    for(int i = 1; i <= N; i++){
+        overlap_temp = NET_array[i].adjust_overlap(map, ll_x, ll_y);
+
+        if(overlap_temp > overlap_max)
+            overlap_max = overlap_temp;
+    }
+
+    printf("max overlap: %d\n", overlap_max);
+
+    CountOverlap(map, N, NET_array, ll_x, ll_y, ur_x, ur_y, block_num);
+
+
     bin_based_FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, skew, map_n, map_m, BIN_array);
-    //printf("bin_based finish\n");
+    printf("bin_based finish\n");
 
     int cutnet, degree;
     //int degree = calculate_degree(CELL_array, C, NET_array, N, block_num, cutnet);
@@ -154,16 +183,9 @@ int main(){
     */
     //W = CB, P는 유지
     //printf("----------------------------\n");
-    printf("hello\n");
-    check_partial_part(C, CELL_array, file_name);
-    printf("world\n");
     printf("bin FM starts!\n");
 
     FM(InitVer, pass, CELL_BIN_array, NET_BIN_array, CB, NB, P, CB, block_num, nullptr, 0, 0, true);
-
-    printf("hello\n");
-    check_partial_part(C, CELL_array, file_name);
-    printf("world\n");
 
     int current_block_num;
     for(int i = 1; i <= CB; i++){
@@ -252,12 +274,11 @@ int main(){
     //printf("\ncutnet: %d, degree: %d\n", cutnet, degree);
 
     write_output(CELL_array, C, file_name, map_n, map_m, block_num, InitVer, pass);
-    printf("hello\n");
     check_partial_part(C, CELL_array, file_name);
-    printf("world\n");
     //check_place(C, CELL_array, file_name, map_n,  map_m);
 
     printf("cutnet: %d, degree: %d\n", cutnet, degree);
+    CountOverlap(map, N, NET_array, ll_x, ll_y, ur_x, ur_y, block_num);
 
     delete[] NET_array;
     delete[] CELL_array;
@@ -268,6 +289,12 @@ int main(){
     delete[] bin_area;
     delete[] bin_block_area;
     delete[] block_area;
+
+    for(int i = 0; i <= ur_x -ll_x; i++){
+        delete map[i];
+    }
+
+    delete[] map;
 
     end = clock();
     total_time = (double)end - start;

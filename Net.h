@@ -1,8 +1,6 @@
 #ifndef __NET_H__
 #define __NET_H__
 
-const int cell_count_limit = 20;
-
 class Cell;
 class Block;
 
@@ -36,6 +34,10 @@ public:
     bool get_activate() const { return activate; }
     int get_weight() const { return weight; }
     void set_weight(int _weight) { weight = _weight; }
+    int adjust_overlap(bool** map, int ll_x, int ll_y);
+    int count_overlap(bool** map, int ll_x, int ll_y, const int block_num) const;
+    void adjust_weight(int max_overlap, int alpha_tune);
+    int get_overlap() const { return overlap; }
     bool operator<(const Net& compare){
         if(this->size < compare.size)
             return true;

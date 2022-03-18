@@ -171,7 +171,7 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
 
 void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n, int map_m, std::vector<int> *BIN_array, int &_ll_x, int &_ll_y, int &_ur_x, int &_ur_y){
     std::ifstream readFile;
-    std::string filename = _filename + ".def.scaled.707.place";
+    std::string filename = _filename + ".def.scaled0.707.place";
     readFile.open(filename);
 
     double ll_x, ll_y, ur_x, ur_y;

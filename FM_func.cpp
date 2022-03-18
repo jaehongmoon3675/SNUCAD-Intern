@@ -15,6 +15,7 @@
 #include "WriteFile.h"
 #include "FM_func.h"
 
+extern int ALPHA;
 
 void get_max(const int C, const Cell* CELL_array, int &pmax, int &smax){
     pmax = -1;
@@ -760,7 +761,7 @@ void bin_based_FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NE
 
         cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, block_num, nullptr, skew, 0, false, i);
 
-        //printf("bin %d cutnet: %d\n", i, cutnet);
+        printf("bin %d cutnet: %d\n", i, cutnet);
 
         for(int i = 1; i <= C; i++){
             _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
@@ -1105,4 +1106,17 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     
 
     LocalMinDist.overWrite(CELL_array, C, NET_array, N, min_cutnet);
+}
+
+int CountOverlap(bool **map, int N, Net *NET_array, int ll_x, int ll_y, int ur_x, int ur_y, int block_num){
+    int overlap_count = 0;
+    
+    for(int i = 1; i <= N; i++){
+        for(int j = 0; j < block_num; j++)
+            overlap_count += NET_array[i].count_overlap(map, ll_x, ll_y, j);
+    }
+
+    printf("Total overlap: %d\n", overlap_count);
+
+    return overlap_count;
 }

@@ -52,6 +52,8 @@ public:
     bool get_fixed() const { return fixed; }
     void get_net_list(int* distribution); //add the distribution of net list to the array 'distribution'
     void set_ll(int _ll_x, int _ll_y) { ll_x = _ll_x, ll_y = _ll_y; }
+    int get_ll_x() const { return ll_x; }
+    int get_ll_y() const { return ll_y; }
     ~Cell(){
     }
 protected:
