@@ -169,6 +169,59 @@ void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n,
         printf("error for reading place file\n");
 }
 
+void read_place(const int C, Cell* CELL_array, std::string _filename, int map_n, int map_m, std::vector<int> *BIN_array, int &_ll_x, int &_ll_y, int &_ur_x, int &_ur_y){
+    std::ifstream readFile;
+    std::string filename = _filename + ".def.scaled.707.place";
+    readFile.open(filename);
+
+    double ll_x, ll_y, ur_x, ur_y;
+
+    //printf("read_hgr\n");
+
+    if(readFile.is_open()){
+        char c;
+        int temp_cell;
+        double cell_x, cell_y;
+        int cell_bin;
+        std::string cell_name;
+
+        readFile >> ll_x >> ll_y >> ur_x >> ur_y;
+        _ll_x = ll_x;
+        _ll_y = ll_y;
+        _ur_x = ur_x;
+        _ur_y = ur_y;
+        
+        readFile.get(c);
+
+        double bin_x_length = (double)(ur_x - ll_x) / map_m;
+        double bin_y_length = (double)(ur_y - ll_y) / map_n;
+
+        for(int i = 1; i <= C; i++){         
+                readFile >> temp_cell >> cell_name >> cell_x >> cell_y;
+
+                cell_bin = (int)((cell_y - ll_y) / bin_y_length) * map_m + (int)((cell_x - ll_x) / bin_x_length);
+
+                assert(cell_bin < map_n * map_m);
+
+                CELL_array[i].set_bin(cell_bin);
+                BIN_array[cell_bin].push_back(i);
+
+                if(readFile.eof())
+                    break;
+                
+                readFile.get(c);
+
+                if(readFile.eof())
+                    break;
+        }
+
+        readFile.close();
+    }
+    else
+        printf("error for reading place file\n");
+}
+
+
 void check_place(const int C, Cell* CELL_array, std::string _filename, int map_n, int map_m){
     std::ifstream readFile;
     std::string filename = _filename + ".def.place";

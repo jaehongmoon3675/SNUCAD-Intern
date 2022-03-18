@@ -37,7 +37,7 @@ int CountCutNet(Block &block, Net *NET_array, int N){
     
     for(int i = 1; i <= N; i++){
         if((block.ith_net_distribution(i) < NET_array[i].cell_list.size()) && (block.ith_net_distribution(i) != 0))
-            cutnet++;
+            cutnet += NET_array[i].get_weight();
         else if(block.ith_net_distribution(i) > NET_array[i].cell_list.size())
             printf("CountcutNet error\n");
     }
@@ -162,6 +162,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                     printf("hdlhldddddddh\n");
                 }
                 */
+               //printf("A gain %d\n", A.gain[BaseCell->get_cell_num()]);
                 cutnet -= A.gain[BaseCell->get_cell_num()];
                 if(!how_to_start && A.gain[BaseCell->get_cell_num()] > 0)
                     pass_start = false;
@@ -175,6 +176,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 */
             }
             else{
+                //printf("B gain %d\n", B.gain[BaseCell->get_cell_num()]);
                 cutnet -= B.gain[BaseCell->get_cell_num()];
                 if(!how_to_start && B.gain[BaseCell->get_cell_num()] > 0)
                     pass_start = false;
@@ -191,7 +193,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             
             if(cutnet < 0){
                 printf("negative cutnet error! move_count: %d\n", move_count);
-                assert(cutnet >= 0);
+                //assert(cutnet >= 0);
             }
 
             if(pass_start){    
@@ -357,6 +359,7 @@ void read_past_block_record(const int _N, const int _C, const Net* _NET_array, c
             assert(temp_cell_num <= C);
 
             NET_array[j].set_net_num(j);
+            NET_array[j].set_weight(_NET_array[i].get_weight());
             NET_array[j].push_cell(CELL_array + temp_cell_num);
             CELL_array[temp_cell_num].push_net(NET_array + j);
         }
@@ -715,6 +718,7 @@ void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Ce
                     j++;
                     check = false;
                     NET_array[j].set_net_num(j);
+                    NET_array[j].set_weight(_NET_array[i].get_weight());
                 }
 
                 temp_cell_num = past_to_current[(*itr)->get_cell_num()];
@@ -865,7 +869,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             */
         }
         else if(alternate && pair){
-            int gain_max = -N - 1;
+            int gain_max = -N * ALPHA;
             for(int i = pair_bin * block_num + 1; i <= (pair_bin + 1) * block_num; i++){
                 if(CELL_array[i].get_current_block() == alternate_block){
                     if(alternate_block->gain[i] > gain_max && i != moved_cell && !CELL_array[i].locked){
@@ -881,7 +885,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             pair_bin = -1;
             moved_cell = -1;
 
-            if(gain_max == -N - 1)
+            if(gain_max == -N * ALPHA)
                 BaseCell = nullptr;
 
             //printf("BaseCell gain: %d\n", BaseCell->get_current_block()->gain[BaseCell->get_cell_num()]);
@@ -898,7 +902,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance, bigger);
         }
 
-        choose_time += (clock() - (double)choose_time_temp);
 
         while(BaseCell != nullptr){        
             //A.print_Block(CELL_array);
@@ -910,16 +913,16 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             std::cout << BaseCell->get_current_block()->get_block_name() << " ";
             printf("BaseCell %d gain: %d\n", BaseCell->get_cell_num(), BaseCell->get_current_block()->gain[BaseCell->get_cell_num()]);
             */
-
-            move_time_temp = clock();
             //printf("before move!\n");
             if(BaseCell->get_current_block() == &A){
+                //printf("A gain %d\n", A.gain[BaseCell->get_cell_num()]);
                 cutnet -= A.gain[BaseCell->get_cell_num()];
                 if(!how_to_start && A.gain[BaseCell->get_cell_num()] > 0)
                     pass_start = false;
                 MoveCell(A, B, BaseCell);
             }
             else{
+                //printf("B gain %d\n", B.gain[BaseCell->get_cell_num()]);
                 cutnet -= B.gain[BaseCell->get_cell_num()];
                 if(!how_to_start && B.gain[BaseCell->get_cell_num()] > 0)
                     pass_start = false;
@@ -940,6 +943,8 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             printf("move_count: %d\n", move_count);
             */
 
+
+            //printf("cc: %d %d\n", cutnet, CountCutNet(A, NET_array, N));
             assert(cutnet == CountCutNet(A, NET_array, N));
             if(cutnet < 0){
                 printf("negative cutnet error! move_count: %d\n", move_count);
@@ -996,7 +1001,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 alternate_block = (alternate_block == &A)? &B : &A;
             }
             else if(alternate && pair){
-                int gain_max = -N - 1;
+                int gain_max = -N  * ALPHA;
                 for(int i = pair_bin * block_num + 1; i <= (pair_bin + 1) * block_num; i++){
                     if(CELL_array[i].get_current_block() == alternate_block){
                         if(alternate_block->gain[i] > gain_max && i != moved_cell && !CELL_array[i].locked){
@@ -1009,7 +1014,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                     assert(i - moved_cell < block_num);
                 }
 
-                if(gain_max == -N - 1)
+                if(gain_max == -N * ALPHA)
                     BaseCell = nullptr;
 
                 //printf("basecell gain: %d\n", BaseCell->get_current_block()->gain[BaseCell->get_cell_num()]);

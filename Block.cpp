@@ -101,12 +101,12 @@ void Block::CellGainInitialization(Block &T, Cell &c){ //inner loop of implement
     if(this == c.get_current_block()){ //if this block is F (from block)
         for(auto i = c.net_list.begin(); i != c.net_list.end(); i++){
             if(Fdistribution[(*i)->get_net_num()] == 1)
-                gain_adjust++;
+                gain_adjust += (*i)->get_weight();
         }
 
         for(auto i = c.net_list.begin(); i != c.net_list.end(); i++){ //if this block is T (to block)
             if((T.Fdistribution[(*i)->get_net_num()] + T.Ldistribution[(*i)->get_net_num()]) == 0)
-                gain_adjust--;
+                gain_adjust -= (*i)->get_weight();
         }
 
         //printf("c.cell_num: %d, C: %d, length of array gain: %d\n", c.cell_num, C, sizeof(gain));
@@ -253,7 +253,7 @@ bool Block::push_Cell_r(Cell* cell){ //cell을 추가하였을 때 size가 uboun
     }
 }
 
-void Block::increase_cell_gain(Cell* cell){
+void Block::increase_cell_gain(Cell* cell, int weight){
     //printf("start increase_cell_gain\n");
     //printf("update Cell %d gain!\n", cell->get_cell_num());
     //gain_update_count++;
@@ -278,7 +278,7 @@ void Block::increase_cell_gain(Cell* cell){
     cell->BUCKETpre = nullptr;
     cell->BUCKETnext = nullptr;
 
-    gain[cell->get_cell_num()]++; 
+    gain[cell->get_cell_num()] += weight; 
     cell->BUCKETnext = BUCKET[gain[cell->get_cell_num()]];
     
     if(BUCKET[gain[cell->get_cell_num()]] != nullptr)
@@ -288,14 +288,14 @@ void Block::increase_cell_gain(Cell* cell){
     BUCKET[gain[cell->get_cell_num()]] = cell;
 
     if(max_gain < PMAX)
-        max_gain++;
+        max_gain += weight;
     
     adjust_maxgain();
     //printf("end increase_cell_gain\n");
 
 }
 
-void Block::decrease_cell_gain(Cell* cell){
+void Block::decrease_cell_gain(Cell* cell, int weight){
     //printf("start decrease_cell_gain\n");
     //gain_update_count++;
 
@@ -317,7 +317,7 @@ void Block::decrease_cell_gain(Cell* cell){
     }
     cell->BUCKETpre = nullptr;
     cell->BUCKETnext = nullptr;
-    gain[cell->get_cell_num()]--; 
+    gain[cell->get_cell_num()] -= weight; 
     cell->BUCKETnext = BUCKET[gain[cell->get_cell_num()]];
 
     
@@ -334,7 +334,7 @@ void Block::decrease_cell_gain(Cell* cell){
 void Block::increase_cell_gain_of_net(Net* net){
     for(auto i = net->cell_list.begin(); i != net->cell_list.end(); i++)
         if((*i)->locked == false)
-            increase_cell_gain(*i);
+            increase_cell_gain(*i, net->get_weight());
         //else
             //gain_update_count++;
     
@@ -343,10 +343,11 @@ void Block::increase_cell_gain_of_net(Net* net){
 void Block::decrease_cell_gain_of_net(Net* net){
     for(auto i = net->cell_list.begin(); i != net->cell_list.end(); i++)
         if((*i)->locked == false)
-            decrease_cell_gain(*i);
+            decrease_cell_gain(*i, net->get_weight());
         //else
             //gain_update_count++;
 }
+
 
 Cell* Block::find_cell_in_block(Net* net){
     for(auto i = net->cell_list.begin(); i != net->cell_list.end(); i++){
@@ -554,7 +555,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
                 }
             }
             else{
-                printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+                //printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
             }
         }
     }
@@ -1088,7 +1089,7 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
             }
             else if(T.Fdistribution[(*i)->get_net_num()] == 1){
                 //printf("MoveCell 2\n");
-                T.decrease_cell_gain(T.find_cell_in_block(*i));
+                T.decrease_cell_gain(T.find_cell_in_block(*i), (*i)->get_weight());
             }
         }
 
@@ -1112,7 +1113,7 @@ void MoveCell(Block &F, Block &T, Cell* BaseCell){
             }
             else if(F.Fdistribution[(*i)->get_net_num()] == 1){
                 //printf("MoveCell 4\n");
-                F.increase_cell_gain(F.find_cell_in_block(*i));
+                F.increase_cell_gain(F.find_cell_in_block(*i), (*i)->get_weight());
             }
         }
     }

@@ -123,6 +123,7 @@ int main(){
         
         NB++;
         NET_BIN_array[NB].set_net_num(NB);
+        NET_BIN_array[NB].set_weight(NET_array[i].get_weight());
 
         for(int j = 1; j <= CB; j++)
             NET_BIN_check[j] = true;

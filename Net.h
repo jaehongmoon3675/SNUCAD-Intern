@@ -10,7 +10,7 @@ class Net{
 public:
     std::list<Cell*> cell_list;
 
-    Net() : net_num(0), size(0), cell_count(0), cut_state(false), activate(true), current_block(nullptr), cell_list(std::list<Cell*>()) {}
+    Net() : net_num(0), size(0), cell_count(0), cut_state(false), activate(true), current_block(nullptr), cell_list(std::list<Cell*>()), weight(4) {}
     void push_cell(Cell* c){
         cell_list.push_back(c);
         size += c->get_size();
@@ -34,6 +34,8 @@ public:
     void set_net_num(int num) { net_num = num; };
     void set_current_block(Block* _current_block) { current_block = _current_block; }
     bool get_activate() const { return activate; }
+    int get_weight() const { return weight; }
+    void set_weight(int _weight) { weight = _weight; }
     bool operator<(const Net& compare){
         if(this->size < compare.size)
             return true;
@@ -49,6 +51,7 @@ private:
     int cell_count;
     bool cut_state;
     bool activate;
+    int weight;
     Block* current_block; //최종적으로 다음 FM으로 넘길때만 사용해야한다
 };
 
