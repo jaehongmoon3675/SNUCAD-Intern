@@ -1,4 +1,5 @@
 #define NDEBUG
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -400,7 +401,7 @@ void read_partial_part(const int C, Cell* &CELL_array, std::string filename){
         readFile.close();
     }
     else
-        printf("No .partial.part file\n");
+        printf("No .partial.part file\n\n");
 }
 
 void check_partial_part(const int C, Cell* &CELL_array, std::string filename){

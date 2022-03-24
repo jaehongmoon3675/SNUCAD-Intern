@@ -778,7 +778,7 @@ void bin_based_FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NE
 
         cutnet = FM(InitVer, pass, CELL_array, NET_array, C, N, P * block_num, W, block_num, nullptr, skew, 0, false, i);
 
-        printf("bin %d cutnet: %d\n", i, cutnet);
+        //printf("bin %d cutnet: %d\n", i, cutnet);
 
         for(int i = 1; i <= C; i++){
             _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());

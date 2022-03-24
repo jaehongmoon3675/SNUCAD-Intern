@@ -50,7 +50,7 @@ int Net::adjust_overlap(bool** map, int ll_x, int ll_y){
     return overlap;
 }
 
-void Net::adjust_weight(int max_overlap, int alpha_tune){
+void Net::adjust_weight(int max_overlap, int alpha_tune, const bool rand_mode){
     if(cell_count == 0)
         weight = 0;
     else if(overlap_net){
@@ -59,9 +59,17 @@ void Net::adjust_weight(int max_overlap, int alpha_tune){
         //weight = - (1 - (double)(overlap) / max_overlap) * (ALPHA - alpha_tune) / (double)ALPHA;
         //weight = (double)((double)(overlap) / max_overlap) * (ALPHA - alpha_tune) + 1;
     }
-    else
-        weight = alpha_tune / 10 + 1;
-
+    else{
+        //weight = alpha_tune / 10 + 1;
+        if(rand_mode){
+            int rand = (std::rand()%(ALPHA)) - 5;
+            if(rand < alpha_tune)
+                weight = alpha_tune / 10 + 1;
+            else
+                weight = 0;
+        }
+        else    weight = alpha_tune / 10 + 1;
+    }
     /*
     if(overlap == 0){
         weight = (max_overlap * alpha_tune) / ALPHA;

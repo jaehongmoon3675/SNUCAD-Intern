@@ -27,28 +27,103 @@ int main(){
     int ll_x, ll_y, ur_x, ur_y;
     std::srand(std::time(nullptr));
 
-    //세로가 n, 가로는 m
-    const int map_n = 2;
-    const int map_m = 2;
-    printf("map_n: %d, map_m: %d\n", map_n, map_m);
+    
     int overlap_x, overlap_y;
 
-    std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
-
     //alpha_tune이 커질수록 overlap늘고 cutnet 준다
-    int alpha_tune = 0;
-    const int block_num = 2;
-    const int InitVer = 1;
-    const int pass = 10;
-    const double skew = 0.05;
-    const bool rand_mode = true;
+    //세로가 n, 가로는 m
+    int map_n = 1;
+    int map_m = 1;
+    int alpha_tune = 100;
+    int block_num = 2;
+    int InitVer = 1;
+    int pass = 20;
+    double skew = 0.05;
+    bool rand_mode = false;
+    bool overlapped = false;
     int tight = 1; //tight이 커질수록 overlap에 대한 정밀도가 낮아짐...
 
+    printf("Overlapped graph FM program\n");
+
+    std::string file_name;
+    printf("file name: ");
+    std::cin >> file_name;
+
+    printf("\nDefault settings are following...\n");
+
+    printf("Basic FM... doesn't provide overlapped graph FM\n");
+    printf("map_n: %d, map_m: %d\n", map_n, map_m);
+    printf("number of block: %d, number of run: %d, area skew: %.2f\n\n", block_num, pass, skew);
+
+    int press = 0;
+    printf("to change the settings... \npress 1 for setting FM\npress 2 for overlapped graph FM \nelse press anything else.\n");
+    scanf("%d", &press);
+    printf("\n");
+
+    while(press == 1 || press == 2){
+        if(press == 1){
+            printf("map setting\n");
+            printf("map_n: ");
+            scanf("%d", &map_n);
+            printf("map_m: ");
+            scanf("%d", &map_m);
+
+            printf("\nFM setting\n");
+            printf("number of block: ");
+            scanf("%d", &block_num);
+            printf("number of run: ");
+            scanf("%d", &pass);
+            printf("number ");
+            printf("skew: ");
+            scanf("%lf", &skew);
+            printf("Init Ver(1-2): ");
+            scanf("%d", &InitVer);
+            if(InitVer != 1 && InitVer != 2)
+                InitVer = 1;
+
+            printf("\nto change the settings... \npress 1 for setting FM again\npress 2 for overlapped graph FM \nelse press anything else.\n");
+            scanf("%d", &press);
+            printf("\n");
+        }
+        else if(press == 2){
+            overlapped = true;
+            printf("with larger alpha, you may get more overlap, less cutnet\n");
+            printf("alpha(0 - 100): ");
+            scanf("%d", &alpha_tune);
+
+            printf("with larger tight, program will measure overlap more tightly\n");
+            printf("tight(1-5): ");
+            scanf("%d", &tight);
+            tight = 6 - tight;
+
+            int rand_mode_i;
+            printf("for random weight mode, press 1\n");
+            scanf("%d", &rand_mode_i);
+
+            if(rand_mode_i == 1)
+                rand_mode = true;
+
+            printf("\nto change the settings... \npress 1 for setting FM\npress 2 for overlapped graph FM again\npress 3 to turn off overlapped graph FM\nelse press anything else.\n");
+            scanf("%d", &press);
+            printf("\n");
+
+            if(press == 3){
+                overlapped = false;
+                printf("Overlapped graph FM off\n\n");
+                printf("to change the settings... \npress 1 for setting FM\npress 2 for overlapped graph FM \nelse press anything else.\n");
+                scanf("%d", &press);
+                printf("\n");
+            }
+        }
+    }
+
     //printf("map_n: %d, map_m: %d, block_num: %d, pass: %d, skew: %.2f\n", map_n, map_m, block_num, pass, skew);
-  
-    const int file_num = 0;
-    const std::string file_name_arr[8] = {"aes_128", "ldpc", "jpeg", "wb_dma", "ecg", "ac97", "nova", "tate_pairing"};
-    std::string file_name = file_name_arr[file_num];
+    
+    std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
+
+    //const int file_num = 0;
+    //const std::string file_name_arr[8] = {"aes_128", "ldpc", "jpeg", "wb_dma", "ecg", "ac97", "nova", "tate_pairing"};
+    //std::string file_name = file_name_arr[file_num];
     Net* NET_array = nullptr;
     Cell* CELL_array = nullptr;
 
@@ -63,9 +138,13 @@ int main(){
     P = read_hgr(_N, C, NET_array, CELL_array, file_name, overlap_x, overlap_y);
     read_hgr_map(C, CELL_array, file_name);
     W = read_hgr_area(C, CELL_array, file_name);
-    //read_place(C, CELL_array, file_name, map_n, map_m, BIN_array);
+    
     N = _N + overlap_x * overlap_y;
-    read_place(C, CELL_array, _N, N, NET_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y, overlap_x, overlap_y);
+    if(overlapped)
+        read_place(C, CELL_array, _N, N, NET_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y, overlap_x, overlap_y);
+    else
+        read_place(C, CELL_array, file_name, map_n, map_m, BIN_array);
+    
     read_partial_part(C, CELL_array, file_name);
     
     int overlap_count = 0;
