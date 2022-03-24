@@ -109,8 +109,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     else
         printf("balance\n");      
     */
-
-    clock_t choosemove_time_temp, reinit_time_temp, choose_time_temp, move_time_temp;
     double choose_time = 0, move_time = 0;
     double get_max_gain_cell_time_temp;
     int pass_start;
@@ -125,11 +123,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
         //assert(TempA == A);
         //assert(TempB == B);
         choose_time = 0, move_time = 0;
-
-        choosemove_time_temp = clock();
-        
-        choose_time_temp = clock();
-
         if(alternate){
             BaseCell = alternate_block->get_max_gain_cell();
 
@@ -285,7 +278,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
         //printf("get_max_gain_cell_time: %fs\n", (get_max_gain_cell_time - get_max_gain_cell_time_temp)/ CLOCKS_PER_SEC);
         //printf("review finish\n");
 
-        reinit_time_temp = clock();
         if(!review){
             LoadDistribution(LocalMinDist, A, B, CELL_array, C);
             if(stuck != stuck_temp)
@@ -854,7 +846,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     printf("gain: %d\n", CELL_array[8].get_current_block()->gain[8]);
     */
 
-    clock_t choosemove_time_temp, reinit_time_temp, choose_time_temp, move_time_temp;
     double choose_time = 0, move_time = 0;
     double get_max_gain_cell_time_temp;
     int pass_start;
@@ -872,10 +863,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
         //assert(TempA == A);
         //assert(TempB == B);
         choose_time = 0, move_time = 0;
-
-        choosemove_time_temp = clock();
-        
-        choose_time_temp = clock();
 
         pair = false;
         pair_bin = -1;
@@ -961,7 +948,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                     pass_start = false;
                 MoveCell(B, A, BaseCell);
             }
-            move_time += ((clock() - (double)move_time_temp));
             //printf("move!\n");
             if(review)
                 move_count_at_min--;
@@ -1012,7 +998,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 }
             }
 
-            choose_time_temp = clock();
 
             if(alternate && !pair){
                 BaseCell = alternate_block->get_max_gain_cell();
@@ -1067,7 +1052,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 BaseCell = ChooseBaseCell_balance(A, B, r, destroy_balance, bigger);
             }
 
-            choose_time += (clock() - (double)choose_time_temp);
             /*
             if(!stuck)
                 BaseCell = ChooseBaseCell_gain(A, B, r);
@@ -1114,7 +1098,6 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
         //printf("get_max_gain_cell_time: %fs\n", (get_max_gain_cell_time - get_max_gain_cell_time_temp)/ CLOCKS_PER_SEC);
         //printf("review\n");
 
-        reinit_time_temp = clock();
         if(!review){
             LoadDistribution(LocalMinDist, A, B, CELL_array, C);
             if(stuck != stuck_temp)

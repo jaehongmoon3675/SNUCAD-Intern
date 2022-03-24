@@ -1,7 +1,6 @@
 #define NDEBUG
 
 #include <iostream>
-#include <ctime>
 #include <cassert>
 #include <fstream>
 #include <cmath>
@@ -917,8 +916,6 @@ void BlockReinitialization(int C, Block &A, Block &B, Cell* CELL_array, Net* NET
 //아직 block에서 제거가 되지는 않았다.
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r){ //r is a balance factor
     //printf("ChooseBaseCell start!\n");
-
-    clock_t get_max_gain_cell_time_temp = clock();
     Cell* max_gain_cellA, * max_gain_cellB;
     max_gain_cellA = A.get_max_gain_cell();
     max_gain_cellB = B.get_max_gain_cell();
