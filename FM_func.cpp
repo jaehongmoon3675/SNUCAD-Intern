@@ -193,7 +193,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
                 break;       
             
             if(cutnet < 0){
-                printf("negative cutnet error! move_count: %d\n", move_count);
+                //printf("negative cutnet error! move_count: %d\n", move_count);
                 //assert(cutnet >= 0);
             }
 
@@ -980,7 +980,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             //printf("cc: %d %d\n", cutnet, CountCutNet(A, NET_array, N));
             assert(cutnet == CountCutNet(A, NET_array, N));
             if(cutnet < 0){
-                printf("negative cutnet error! move_count: %d\n", move_count);
+                //printf("negative cutnet error! move_count: %d\n", move_count);
                 assert(cutnet >= 0);
             }
 

@@ -245,7 +245,7 @@ void read_place(const int C, Cell* CELL_array, const int _N, const int N, Net* N
 
     double ll_x, ll_y, ur_x, ur_y;
     int x_scale, y_scale;
-    int tight = 10;
+    int tight = 1000;
 
     //printf("read_hgr\n");
 
@@ -282,11 +282,13 @@ void read_place(const int C, Cell* CELL_array, const int _N, const int N, Net* N
 
                 assert(cell_bin < map_n * map_m);
 
-                overlap_criteria = (((cell_x + (double)x_scale / (tight + 5)) + (double)CELL_array[i].get_size() * 0.707 + 0.5) / x_scale);
+                overlap_criteria = ((cell_x + (double)CELL_array[i].get_size() * 0.707 + 5.0/tight) / x_scale);
 
                 if(overlap_criteria > (((int)cell_x) / x_scale)){
-                    NET_array[_N + (int)cell_y * overlap_x + overlap_criteria].push_cell(CELL_array + i);
-                    CELL_array[i].push_net(NET_array + _N + (int)cell_y * overlap_x + overlap_criteria);
+                    for(int j = (((int)cell_x) / x_scale) + 1; j <= overlap_criteria; j++){
+                        NET_array[_N + (int)cell_y * overlap_x + j].push_cell(CELL_array + i);
+                        CELL_array[i].push_net(NET_array + _N + (int)cell_y * overlap_x + j);
+                    }
                 }
 
                 CELL_array[i].set_bin(cell_bin);

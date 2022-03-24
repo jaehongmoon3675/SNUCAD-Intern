@@ -54,7 +54,10 @@ void Net::adjust_weight(int max_overlap, int alpha_tune){
     if(cell_count == 0)
         weight = 0;
     else if(overlap_net){
-        weight = ((std::sqrt(max_overlap + 1 - overlap) + max_overlap / 2) * (ALPHA - alpha_tune));
+        //weight = (((double)(overlap + 1) / max_overlap)) * (1 - ((double)(overlap + 1) / max_overlap)) * (ALPHA - alpha_tune) * 10;
+        weight = - (1 - (double)(overlap) / max_overlap) * (ALPHA - alpha_tune) / (double)ALPHA;
+        //weight = - (1 - (double)(overlap) / max_overlap) * (ALPHA - alpha_tune) / (double)ALPHA;
+        //weight = (double)((double)(overlap) / max_overlap) * (ALPHA - alpha_tune) + 1;
     }
     else
         weight = alpha_tune / 10 + 1;
