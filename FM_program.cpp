@@ -37,7 +37,7 @@ int main(){
     int alpha_tune = 100;
     int block_num = 2;
     int InitVer = 1;
-    int pass = 20;
+    int pass = 2;
     double skew = 0.05;
     bool rand_mode = false;
     bool overlapped = false;
@@ -48,6 +48,10 @@ int main(){
     std::string file_name;
     printf("file name: ");
     std::cin >> file_name;
+
+    int partial_check = 0;
+    printf("\nIf there is a .partial.part, press 1.\n");
+    scanf("%d", &partial_check);
 
     printf("\nDefault settings are following...\n");
 
@@ -146,7 +150,8 @@ int main(){
     else
         read_place(C, CELL_array, file_name, map_n, map_m, BIN_array);
     
-    read_partial_part(C, CELL_array, file_name);
+    if(partial_check == 1)
+        read_partial_part(C, CELL_array, file_name);
     
     int overlap_count = 0;
     int overlap_max = 0;
@@ -291,6 +296,8 @@ int main(){
     //W = CB, P는 유지
     //printf("----------------------------\n");
     //printf("bin FM starts!\n");
+
+    pass = std::min(CB + 1, pass);
 
     FM(InitVer, pass, CELL_BIN_array, NET_BIN_array, CB, NB, P, CB, block_num, nullptr, 0, 0, true, 0);
 
