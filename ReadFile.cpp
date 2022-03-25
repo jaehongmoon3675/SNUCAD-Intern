@@ -283,7 +283,8 @@ void read_place(const int C, Cell* CELL_array, const int _N, const int N, Net* N
 
                 assert(cell_bin < map_n * map_m);
 
-                overlap_criteria = ((cell_x + (double)CELL_array[i].get_size() * 0.707 + 5.0/tight) / x_scale);
+                //overlap_criteria = ((cell_x + (double)CELL_array[i].get_size() * 0.707 + 5.0/tight) / x_scale);
+                overlap_criteria = ((cell_x + (double)CELL_array[i].get_size() + 5.0/tight) / x_scale);
 
                 if(overlap_criteria > (((int)cell_x) / x_scale)){
                     for(int j = (((int)cell_x) / x_scale) + 1; j <= overlap_criteria; j++){

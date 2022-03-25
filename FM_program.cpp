@@ -37,11 +37,13 @@ int main(){
     int alpha_tune = 100;
     int block_num = 2;
     int InitVer = 1;
-    int pass = 2;
+    int pass = 20;
     double skew = 0.05;
     bool rand_mode = false;
     bool overlapped = false;
     int tight = 1; //tight이 커질수록 overlap에 대한 정밀도가 낮아짐...
+
+    int revision = 10;
 
     printf("Overlapped graph FM program\n");
 
@@ -57,14 +59,17 @@ int main(){
 
     printf("Basic FM... doesn't provide overlapped graph FM\n");
     printf("map_n: %d, map_m: %d\n", map_n, map_m);
-    printf("number of block: %d, number of run: %d, area skew: %.2f\n\n", block_num, pass, skew);
+    printf("number of block: %d, number of run: %d, area skew: %.2f, InitVer: %d\n\n", block_num, pass, skew, InitVer);
 
     int press = 0;
     printf("to change the settings... \npress 1 for setting FM\npress 2 for overlapped graph FM \nelse press anything else.\n");
     scanf("%d", &press);
     printf("\n");
 
+    bool new_setting = false;
+
     while(press == 1 || press == 2){
+        new_setting = true;
         if(press == 1){
             printf("map setting\n");
             printf("map_n: ");
@@ -120,6 +125,24 @@ int main(){
         }
     }
 
+    if(new_setting){
+        if(overlapped)
+            printf("Overlapped graph FM\n");
+        else
+            printf("Basic FM\n");
+        printf("map_n: %d, map_m: %d\n", map_n, map_m);
+        printf("number of block: %d, number of run: %d, area skew: %.2f, InitVer: %d\n", block_num, pass, skew, InitVer);
+        if(overlapped){
+            printf("alpha: %d, tight: %d, ", alpha_tune, 6 - tight);
+
+            if(rand_mode)
+                printf("random weight mode on\n");
+            else
+                printf("random weight mode off\n");
+        }
+        printf("\n");
+    }
+
     //printf("map_n: %d, map_m: %d, block_num: %d, pass: %d, skew: %.2f\n", map_n, map_m, block_num, pass, skew);
     
     std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
@@ -137,13 +160,13 @@ int main(){
 
     if(overlapped){
         read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
-        overlap_x = (ur_x - ll_x) / (2 * tight);
+        overlap_x = (ur_x - ll_x) / (2 * tight) + revision;
         overlap_y = ur_y - ll_y + 2; //overlap_y의 scale은 항상 1이 되도록 하자.
     }
     P = read_hgr(_N, C, NET_array, CELL_array, file_name, overlap_x, overlap_y);
     read_hgr_map(C, CELL_array, file_name);
     W = read_hgr_area(C, CELL_array, file_name);
-    
+
     N = _N + overlap_x * overlap_y;
     if(overlapped)
         read_place(C, CELL_array, _N, N, NET_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y, overlap_x, overlap_y);

@@ -533,7 +533,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
                 if(!A.push_Cell_ub(CELL_array + i)){
                     A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        printf(".partial.part error on bin %d\n", bin_num);
                         A.init_error = false;
                     }
                     if(!A.push_Cell_ub(CELL_array + i)){
@@ -545,7 +545,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
                 if(!B.push_Cell_ub(CELL_array + i)){
                     B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        printf(".partial.part error on bin %d\n", bin_num);
                         B.init_error = false;
                     }
                     if(!B.push_Cell_ub(CELL_array + i)){
@@ -554,7 +554,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
                 }
             }
             else{
-                //printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+                //printf(".partial.part error on bin %d. Check setting block_num_ub\n", bin_num);
             }
         }
     }
@@ -722,7 +722,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                 if(!A.push_Cell_ub(CELL_array + i)){
                     A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        printf(".partial.part error on bin %d\n", bin_num);
                         A.init_error = false;
                     }
                     if(!A.push_Cell_ub(CELL_array + i)){
@@ -734,7 +734,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                 if(!B.push_Cell_ub(CELL_array + i)){
                     B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        printf(".partial.part error on bin %d\n", bin_num);
                         B.init_error = false;
                     }
                     if(!B.push_Cell_ub(CELL_array + i)){
@@ -743,7 +743,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
                 }
             }
             else{
-                //printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+                //printf(".partial.part error on bin %d. Check setting block_num_ub\n", bin_num);
             }
         }
     }
@@ -842,7 +842,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
                 if(!A.push_Cell_ub(CELL_array + i)){
                     A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        printf(".partial.part error on bin %d\n", bin_num);
                         A.init_error = false;
                     }
                     if(!A.push_Cell_ub(CELL_array + i)){
@@ -854,7 +854,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
                 if(!B.push_Cell_ub(CELL_array + i)){
                     B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        printf(".partial.part error on bin %d\n", bin_num);
                         B.init_error = false;
                     }
                     if(!B.push_Cell_ub(CELL_array + i)){
@@ -863,7 +863,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
                 }
             }
             else{
-                //printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+                //printf(".partial.part error on bin %d. Check setting block_num_ub\n", bin_num);
             }
         }
     }
