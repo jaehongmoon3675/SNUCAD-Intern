@@ -1,4 +1,4 @@
-#define NDEBUG
+//#define NDEBUG
 #include <iostream>
 #include <cassert>
 #include <list>
@@ -293,7 +293,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     }while(review);
 
     //printf("min_cutnet: %d, cutnet: %d\n", min_cutnet, cutnet);
-    assert(min_cutnet == cutnet);
+    //assert(min_cutnet == cutnet);
 
     //printf("\n final \n");
     //A.print_Block(CELL_array);
@@ -327,6 +327,7 @@ void read_past_block_record(const int _N, const int _C, const Net* _NET_array, c
         CELL_array[j].set_name(_CELL_array[i].get_cell_name());
         CELL_array[j].set_bin(_CELL_array[i].get_bin());
         CELL_array[j].set_fixed(_CELL_array[i].get_fixed());
+        CELL_array[j].set_current_block_num(_CELL_array[i].get_current_block_num());
 
         past_to_current[i] = j;
         current_to_past[j] = i;
@@ -362,6 +363,7 @@ void read_past_block_record(const int _N, const int _C, const Net* _NET_array, c
 
     delete[] past_to_current;
 }
+
 
 //최종적으로 globalmin을 load하고 reinit 후, 반드시 Block의 set_current_block_of_net을 호출시켜주어야
 //alternate시 초기화가 이미 되어있어야.
@@ -447,15 +449,14 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
             BlockInitialization(B, A, CELL_array, C, bin_num);
             break;
         case 2:
-            BlockInitialization(B, A, CELL_array, NET_array, C, N);
+            BlockInitialization(B, A, CELL_array, NET_array, C, N, bin_num);
             break;
         default:
-            read_output_part(A, B, C, CELL_array);
+            BlockInitialization(B, A, CELL_array, C, bin_num);
         }   
     }
 
     BlockReinitialization(C, A, B, CELL_array, NET_array, 0);
-
     /*
     printf("cell 8 info\n");
     std::cout << CELL_array[8].get_current_block()->get_block_name() <<std::endl;
@@ -575,38 +576,53 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     int next_step_2 = block_num - next_step_1;
 
     if(next_step_1 > 1){
-        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_1, &A, skew, bias + next_step_2, alternate);
+        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_1, &A, skew, bias + next_step_2, alternate, bin_num);
         for(int i = 1; i <= C; i++){
-            if(GlobalMinDist[i] == 1){
-                if(!_CELL_array[current_to_past[i]].get_fixed())
-                    _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
-            }
+            if(CELL_array[i].get_current_block() == &A)
+                if(GlobalMinDist[i] == 1){
+                    if(!_CELL_array[current_to_past[i]].get_fixed())
+                        _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+                    else{
+                        assert(_CELL_array[current_to_past[i]].get_current_block_num() == CELL_array[i].get_current_block_num());
+                    }
+                }
                 //_CELL_array[current_to_past[i]].set_current_block_num(bias + CELL_array[i].get_current_block_num());
         }
     }
-    else{
+    else if(next_step_1){
         for(int i = 1; i <= C; i++){
-            if(GlobalMinDist[i] == 1)
-                if(!_CELL_array[current_to_past[i]].get_fixed())
-                    _CELL_array[current_to_past[i]].set_current_block_num(bias + next_step_2);
+            if(CELL_array[i].get_current_block() == &A)
+                if(GlobalMinDist[i] == 1)
+                    if(!_CELL_array[current_to_past[i]].get_fixed())
+                        _CELL_array[current_to_past[i]].set_current_block_num(bias + next_step_2);
+                    else
+                        assert(_CELL_array[current_to_past[i]].get_current_block_num() == bias + next_step_2);
         }
         //printf("Block %d area: %d, cell_num: %d\n", bias + next_step_2, A.get_size(), A.get_cell_num(CELL_array, C));      
     }
 
     if(next_step_2 > 1){
-        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_2, &B, skew, bias, alternate);
+        total_cutnet += FM(InitVer, pass, CELL_array, NET_array, C, N, P, W, next_step_2, &B, skew, bias, alternate, bin_num);
         for(int i = 1; i <= C; i++){
-            if(GlobalMinDist[i] == 0)
-                if(!_CELL_array[current_to_past[i]].get_fixed())
-                    _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+            if(GlobalMinDist[i] == 0){
+                if(CELL_array[i].get_current_block() == &B)
+                    if(!_CELL_array[current_to_past[i]].get_fixed())
+                        _CELL_array[current_to_past[i]].set_current_block_num(CELL_array[i].get_current_block_num());
+                    else{
+                        assert(_CELL_array[current_to_past[i]].get_current_block_num() == CELL_array[i].get_current_block_num());
+                    }
                 //_CELL_array[current_to_past[i]].set_current_block_num(bias + CELL_array[i].get_current_block_num());
+            }
         }
     }
     else{
         for(int i = 1; i <= C; i++){
             if(GlobalMinDist[i] == 0)
-                if(!_CELL_array[current_to_past[i]].get_fixed())
-                    _CELL_array[current_to_past[i]].set_current_block_num(bias);
+                if(CELL_array[i].get_current_block() == &B)
+                    if(!_CELL_array[current_to_past[i]].get_fixed())
+                        _CELL_array[current_to_past[i]].set_current_block_num(bias);
+                    else
+                        assert(_CELL_array[current_to_past[i]].get_current_block_num() == bias);
         }
         //printf("Block %d area: %d, cell_num: %d\n", bias, B.get_size(), B.get_cell_num(CELL_array, C));      
     }
@@ -615,6 +631,8 @@ int FM(const int InitVer, const int pass, Cell* _CELL_array, Net* _NET_array, co
     //printf("Final min num of cutnet: %d\n", global_min_cutnet);
 
     //Check(A, B, NET_array, N);
+
+    //printf("A size(): %d A ubound(): %.2f B size(): %d B ubound(): %.2f\n", A.get_size(), A.get_ubound(), B.get_size(), B.get_ubound());
 
     delete[] current_to_past;
     if(current_block != nullptr){
@@ -853,6 +871,7 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
     bool pair = false;
     int pair_bin = -1;
     int moved_cell = -1;
+    int unlocked_cell_count = 0;
     do{ 
         //int pass_start = init_pass_start; //계속해서 초기화 시켜여줘야함에 유의!
         pass_start = (how_to_start && !alternate)? init_pass_start : 2;
@@ -869,17 +888,35 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
         moved_cell = -1;
 
         if(alternate && !pair){
-            BaseCell = alternate_block->get_max_gain_cell();
+            do{
+                BaseCell = alternate_block->get_max_gain_cell();
 
-            if(BaseCell != nullptr){
-                alternate_block->remove_from_BUCKET(BaseCell);
+                if(BaseCell != nullptr){
+                    alternate_block->remove_from_BUCKET(BaseCell);
 
-                pair_bin = BaseCell->get_bin();
-                moved_cell = BaseCell->get_cell_num();
-                pair = true;
+                    pair_bin = BaseCell->get_bin();
+                    moved_cell = BaseCell->get_cell_num();
+                    pair = true;
 
-                alternate_block = (alternate_block == &A)? &B : &A;
-            }
+                    alternate_block = (alternate_block == &A)? &B : &A;
+                    
+                    unlocked_cell_count = 0;
+
+                    for(int i = pair_bin * block_num + 1; i <= (pair_bin + 1) * block_num; i++){
+                        if(CELL_array[i].get_current_block() == alternate_block){
+                            if(!CELL_array[i].locked){
+                                unlocked_cell_count++;
+                            }
+                        }
+
+                        assert(i - moved_cell < block_num);
+                    }
+
+                    if(unlocked_cell_count == 0)
+                        continue;
+                }
+
+            }while(BaseCell != nullptr);
             /*
             else{
                 printf("Something is wrong...\n");
@@ -973,7 +1010,8 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             if(pass_start){    
                 if(!review){              
                     min_cutnet = cutnet;
-                    move_count_at_min = move_count;
+                    if(move_count % 2 == 0)
+                        move_count_at_min = move_count;
                     //printf("%d ", move_count_at_min);
                     A_size_at_min = A.get_size();
 
@@ -1000,23 +1038,35 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
 
 
             if(alternate && !pair){
-                BaseCell = alternate_block->get_max_gain_cell();
+                do{
+                    BaseCell = alternate_block->get_max_gain_cell();
 
-                if(BaseCell != nullptr){
-                    alternate_block->remove_from_BUCKET(BaseCell);
+                    if(BaseCell != nullptr){
+                        alternate_block->remove_from_BUCKET(BaseCell);
 
-                    pair_bin = BaseCell->get_bin();
-                    moved_cell = BaseCell->get_cell_num();
-                    pair = true;
-                }
-                /*
-                else{
-                    printf("Something is wrong...\n");
-                    printf("A: %d, %f\n", A.get_size(), A.get_ubound());
-                    assert(BaseCell != nullptr);
-                }
-                */
-                alternate_block = (alternate_block == &A)? &B : &A;
+                        pair_bin = BaseCell->get_bin();
+                        moved_cell = BaseCell->get_cell_num();
+                        pair = true;
+
+                        alternate_block = (alternate_block == &A)? &B : &A;
+                        
+                        unlocked_cell_count = 0;
+
+                        for(int i = pair_bin * block_num + 1; i <= (pair_bin + 1) * block_num; i++){
+                            if(CELL_array[i].get_current_block() == alternate_block){
+                                if(!CELL_array[i].locked){
+                                    unlocked_cell_count++;
+                                }
+                            }
+
+                            assert(i - moved_cell < block_num);
+                        }
+
+                        if(unlocked_cell_count == 0)
+                            continue;
+                    }
+
+                }while(BaseCell != nullptr);
             }
             else if(alternate && pair){
                 int gain_max = -N  * ALPHA;
@@ -1066,7 +1116,8 @@ void FM_pass(int C, int N, double r, int pass_num, Cell* CELL_array, Net* NET_ar
             if(stuck_temp && A.bigger() != bigger && A.get_balance() != destroy_balance && (!alternate || move_count %2 == 0)){
                 if(!review){
                     min_cutnet = cutnet;
-                    move_count_at_min = move_count;
+                    if(move_count % 2 == 0)
+                        move_count_at_min = move_count;
                 }
                 stuck_temp = false;
             }

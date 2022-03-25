@@ -36,8 +36,8 @@ int main(){
     std::vector<int> *BIN_array = new std::vector<int>[map_n * map_m];
 
     //alpha_tune이 커질수록 overlap늘고 cutnet 준다
-    int alpha_tune = 0;
-    const int block_num = 2;
+    int alpha_tune = 100;
+    const int block_num = 6;
     const int InitVer = 1;
     const int pass = 10;
     const double skew = 0.05;
@@ -46,7 +46,7 @@ int main(){
 
     //printf("map_n: %d, map_m: %d, block_num: %d, pass: %d, skew: %.2f\n", map_n, map_m, block_num, pass, skew);
   
-    const int file_num = 0;
+    const int file_num = 3;
     const std::string file_name_arr[8] = {"aes_128", "ldpc", "jpeg", "wb_dma", "ecg", "ac97", "nova", "tate_pairing"};
     std::string file_name = file_name_arr[file_num];
     Net* NET_array = nullptr;
@@ -212,19 +212,6 @@ int main(){
     //printf("----------------------------\n");
     //printf("bin FM starts!\n");
 
-    FM(InitVer, pass, CELL_BIN_array, NET_BIN_array, CB, NB, P, CB, block_num, nullptr, 0, 0, true);
-
-    int current_block_num;
-    for(int i = 1; i <= CB; i++){
-        current_block_num = CELL_BIN_array[i].get_current_block_num();
-
-        for(int j = 0; j < CELL_BIN_array[i].Cell_set.size(); j++){
-            CELL_array[CELL_BIN_array[i].Cell_set[j]].set_current_block_num(current_block_num);
-            //printf("%d %d %d %d\n", CELL_array[j].get_bin(), (i - 1) / block_num, i, j);
-            assert(CELL_array[CELL_BIN_array[i].Cell_set[j]].get_bin() == (i - 1) / block_num);
-        }
-    }
-
     int *bin_block_area = new int[CB + 1];
     int *block_area = new int[block_num];
 
@@ -278,6 +265,70 @@ int main(){
             printf("\n");
         }
     }
+
+    FM(InitVer, pass, CELL_BIN_array, NET_BIN_array, CB, NB, P, CB, block_num, nullptr, 0, 0, true, 0);
+
+    int current_block_num;
+    for(int i = 1; i <= CB; i++){
+        current_block_num = CELL_BIN_array[i].get_current_block_num();
+
+        for(int j = 0; j < CELL_BIN_array[i].Cell_set.size(); j++){
+            CELL_array[CELL_BIN_array[i].Cell_set[j]].set_current_block_num(current_block_num);
+            //printf("%d %d %d %d\n", CELL_array[j].get_bin(), (i - 1) / block_num, i, j);
+            assert(CELL_array[CELL_BIN_array[i].Cell_set[j]].get_bin() == (i - 1) / block_num);
+        }
+    }
+
+    for(int i = 1; i <= CB; i++)
+        bin_block_area[i] = 0;
+
+    for(int i = 0; i < block_num; i++)
+        block_area[i] = 0;
+    
+    /*
+    for(int i = 0; i < map_m * map_n; i++)
+        printf("%d ", bin_area[i]);
+    */
+
+    for(int i = 1; i <= C; i++){
+        current_CB = block_num * CELL_array[i].get_bin() + CELL_array[i].get_current_block_num() + 1;
+        bin_block_area[current_CB] += CELL_array[i].get_size();
+    }
+
+    if(bin_area_print){
+        printf("\t");
+        for(int i = 0; i < block_num; i++)
+            printf("Block %d\t\t", i);
+        printf("skew\n");
+    }
+
+    current_bin = 0;
+    min = W, max = 0;
+    for(int i = 1; i <= CB; i++){
+        if(i % block_num == 1){
+            if(bin_area_print)
+                printf("bin %d\t", i / block_num);
+            current_bin = i / block_num;
+            min = bin_area[current_bin]; max = 0;
+        }
+
+        if(min > bin_block_area[i])
+            min = bin_block_area[i];
+        
+        if(max < bin_block_area[i])
+            max = bin_block_area[i];
+
+        if(bin_area_print)    
+            printf("%d / %.2f\t", bin_block_area[i], (double)bin_block_area[i] / bin_area[current_bin]);
+
+        block_area[(i - 1) % block_num] += bin_block_area[i];
+
+        
+        if(bin_area_print && i % block_num == 0){
+            printf("%.2f", (double)(max - min) / bin_area[current_bin]);
+            printf("\n");
+        }
+    }
     
     if(bin_area_print){
         min = W; max = 0;
@@ -301,7 +352,7 @@ int main(){
     //printf("\ncutnet: %d, degree: %d\n", cutnet, degree);
 
     write_output(CELL_array, C, file_name, map_n, map_m, block_num, InitVer, pass);
-    //check_partial_part(C, CELL_array, file_name);
+    check_partial_part(C, CELL_array, file_name);
     overlap_count = CalculateTotalOverlap(NET_array + _N, overlap_x * overlap_y, block_num);
     //check_place(C, CELL_array, file_name, map_n,  map_m);
 

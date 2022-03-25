@@ -291,7 +291,7 @@ int main(){
     //printf("----------------------------\n");
     //printf("bin FM starts!\n");
 
-    FM(InitVer, pass, CELL_BIN_array, NET_BIN_array, CB, NB, P, CB, block_num, nullptr, 0, 0, true);
+    FM(InitVer, pass, CELL_BIN_array, NET_BIN_array, CB, NB, P, CB, block_num, nullptr, 0, 0, true, 0);
 
     int current_block_num;
     for(int i = 1; i <= CB; i++){

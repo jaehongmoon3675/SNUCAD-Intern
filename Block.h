@@ -81,6 +81,8 @@ public:
         
         return false;
     }
+    int get_block_num_lb() const { return block_num_lb; }
+    int get_block_num_ub() const { return block_num_ub; }
     ~Block(){
         delete[] (BUCKET - PMAX);
         delete[] Fdistribution; //Free Distribution
@@ -108,6 +110,7 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
 
 //VERSION 2
 void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N);
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int bin_num);
 
 //implement how to choose the base cell, find base cell, remove it from block and push it into FreeCellList
 Cell* ChooseBaseCell_gain(Block &A, Block &B, double r); //r is a balance factor

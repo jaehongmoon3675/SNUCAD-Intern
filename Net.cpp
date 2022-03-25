@@ -62,8 +62,8 @@ void Net::adjust_weight(int max_overlap, int alpha_tune, const bool rand_mode){
     else{
         //weight = alpha_tune / 10 + 1;
         if(rand_mode){
-            int rand = (std::rand()%(ALPHA)) - 5;
-            if(rand < alpha_tune)
+            int rand = (std::rand()%(ALPHA));
+            if(rand < 80 + alpha_tune / 5)
                 weight = alpha_tune / 10 + 1;
             else
                 weight = 0;

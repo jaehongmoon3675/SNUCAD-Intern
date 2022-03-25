@@ -533,7 +533,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
                 if(!A.push_Cell_ub(CELL_array + i)){
                     A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d block A\n", bin_num);
+                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
                         A.init_error = false;
                     }
                     if(!A.push_Cell_ub(CELL_array + i)){
@@ -545,7 +545,7 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, int C, int bin_nu
                 if(!B.push_Cell_ub(CELL_array + i)){
                     B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d block B\n", bin_num);
+                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
                         B.init_error = false;
                     }
                     if(!B.push_Cell_ub(CELL_array + i)){
@@ -708,18 +708,21 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
     delete[] NET_check_array;
 }
 
-void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, int block_num, int bin_num){
-    int i;
-    int block_num_A = block_num / 2;
-    int block_num_B = block_num - block_num_A;
+void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, int C, int N, int bin_num){
+    std::queue<Net *> net_queue;
+    Net* temp_net = nullptr;
+    bool check = true;
+    //bool alter = true;
+    //Block* current_block = &A;
 
+    int i;
     for(int i = 1; i <= C; i++){
         if(CELL_array[i].get_fixed()){
             if(A.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
                 if(!A.push_Cell_ub(CELL_array + i)){
                     A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
                     if(A.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d block A\n", bin_num);
+                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
                         A.init_error = false;
                     }
                     if(!A.push_Cell_ub(CELL_array + i)){
@@ -731,7 +734,127 @@ void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, i
                 if(!B.push_Cell_ub(CELL_array + i)){
                     B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
                     if(B.init_error){
-                        printf(".partial.part error in BlockInitialization on bin %d block B\n", bin_num);
+                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        B.init_error = false;
+                    }
+                    if(!B.push_Cell_ub(CELL_array + i)){
+                        printf("set_ubound error in BlockInitialization\n");
+                    }
+                }
+            }
+            else{
+                //printf(".partial.part error in BlockInitialization on bin %d. Check setting block_num_ub\n", bin_num);
+            }
+        }
+    }
+
+    //Net_Num_Size* num_size_order = new Net_Num_Size[N + 1];
+    bool* NET_check_array = new bool[N + 1];
+
+    for(int i = 1; i <= N; i++){
+        NET_check_array[i] = true;
+        //num_size_order[i].num = NET_array[i].get_net_num();
+        //num_size_order[i].size = NET_array[i].get_size();
+    }
+
+    //qsort(num_size_order + 1, N, sizeof(Net_Num_Size), net_compare);
+
+    net_queue.push(NET_array + 1);
+    NET_check_array[1] = false;
+
+    while(check){
+        if(net_queue.empty()){
+            for(int i = 1; i <= N; i++){
+                if(NET_check_array[i]){
+                    net_queue.push(NET_array + i);
+                    NET_check_array[i] = false;
+
+                    break;
+                }
+
+            }
+        }
+        temp_net = net_queue.front();
+        net_queue.pop();
+
+        for(auto itr = temp_net->cell_list.begin(); itr != temp_net->cell_list.end(); itr++){
+            if((*itr)->get_current_block() == &A)
+                continue;
+
+            if((*itr)->get_fixed())
+                continue;
+
+
+            if(A.push_Cell_ub(*itr)){
+                //FreeCellList.push(*itr);
+                for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if(NET_check_array[(*jtr)->get_net_num()]){
+                        net_queue.push(*jtr);
+                        NET_check_array[(*jtr)->get_net_num()] = false;
+                    }
+                }
+            }
+            else{
+                check = false;
+                break; // A가 가득 찼으므로 break, 나머지는 B에 채우자                
+            }
+        }
+
+        
+        /*
+        if(check){
+            for(int i = 1; i <= N; i++)
+                if(NET_check_array[i]){
+                    net_queue.push(NET_array + i);
+                    NET_check_array[i] = false;
+                }
+        } 
+        */       
+    }
+
+
+    for(i = 1; i <= C; i++){
+        if(CELL_array[i].get_current_block() != &A){
+            if(CELL_array[i].get_fixed())
+                continue;
+
+            if(!B.push_Cell_ub(CELL_array + i))
+                break;
+            
+            //FreeCellList.push(CELL_array + i);
+        }
+    }
+
+    if(i <= C)
+        printf("Initialization 2 error! i: %d, C: %d\n", i, C);
+
+    delete[] NET_check_array;
+}
+
+void BlockInitialization_cell_bin(Block &A, Block &B, Cell* CELL_array, int C, int block_num, int bin_num){
+    int i;
+    int block_num_A = block_num / 2;
+    int block_num_B = block_num - block_num_A;
+
+    for(int i = 1; i <= C; i++){
+        if(CELL_array[i].get_fixed()){
+            if(A.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
+                if(!A.push_Cell_ub(CELL_array + i)){
+                    A.set_ubound(std::ceil(A.get_ubound() + CELL_array[i].get_size()));
+                    if(A.init_error){
+                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
+                        A.init_error = false;
+                    }
+                    if(!A.push_Cell_ub(CELL_array + i)){
+                        printf("set_ubound error in BlockInitialization\n");
+                    }
+                }
+            }
+            else if(B.is_this_fixed_cell_here(CELL_array[i].get_current_block_num())){
+                if(!B.push_Cell_ub(CELL_array + i)){
+                    B.set_ubound(std::ceil(B.get_ubound() + CELL_array[i].get_size()));
+                    if(B.init_error){
+                        printf(".partial.part error in BlockInitialization on bin %d\n", bin_num);
                         B.init_error = false;
                     }
                     if(!B.push_Cell_ub(CELL_array + i)){
