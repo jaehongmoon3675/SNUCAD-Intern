@@ -56,7 +56,7 @@ int main(){
     double total_time;
 
     start = clock();
-
+    
     read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
     overlap_x = (ur_x - ll_x) / (2 * tight);
     overlap_y = ur_y - ll_y + 2; //overlap_y의 scale은 항상 1이 되도록 하자.

@@ -28,7 +28,7 @@ int main(){
     std::srand(std::time(nullptr));
 
     
-    int overlap_x, overlap_y;
+    int overlap_x = 0, overlap_y = 0;
 
     //alpha_tune이 커질수록 overlap늘고 cutnet 준다
     //세로가 n, 가로는 m
@@ -131,9 +131,11 @@ int main(){
 
     start = clock();
 
-    read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
-    overlap_x = (ur_x - ll_x) / (2 * tight);
-    overlap_y = ur_y - ll_y + 2; //overlap_y의 scale은 항상 1이 되도록 하자.
+    if(overlapped){
+        read_place(C, CELL_array, file_name, map_n, map_m, BIN_array, ll_x, ll_y, ur_x, ur_y);
+        overlap_x = (ur_x - ll_x) / (2 * tight);
+        overlap_y = ur_y - ll_y + 2; //overlap_y의 scale은 항상 1이 되도록 하자.
+    }
     P = read_hgr(_N, C, NET_array, CELL_array, file_name, overlap_x, overlap_y);
     read_hgr_map(C, CELL_array, file_name);
     W = read_hgr_area(C, CELL_array, file_name);
