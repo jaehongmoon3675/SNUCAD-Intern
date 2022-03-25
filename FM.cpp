@@ -382,6 +382,8 @@ int main(){
 
     printf("runtime: %.3fs\n", total_time / CLOCKS_PER_SEC);
     printf("\n");
+
+    system("pause");
     
     return 0;
 }

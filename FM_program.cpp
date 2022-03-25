@@ -73,7 +73,6 @@ int main(){
             scanf("%d", &block_num);
             printf("number of run: ");
             scanf("%d", &pass);
-            printf("number ");
             printf("skew: ");
             scanf("%lf", &skew);
             printf("Init Ver(1-2): ");
@@ -410,6 +409,8 @@ int main(){
 
     printf("runtime: %.3fs\n", total_time / CLOCKS_PER_SEC);
     printf("\n");
+
+    system("pause");
     
     return 0;
 }
