@@ -39,6 +39,7 @@ public:
     int count_overlap(bool** map, int ll_x, int ll_y, const int block_num) const;
     void adjust_weight(int max_overlap, int alpha_tune, const bool rand_mode);
     int get_overlap() const { return overlap; }
+    void set_overlap(int _overlap) { overlap = _overlap; }
     bool operator<(const Net& compare){
         if(this->size < compare.size)
             return true;

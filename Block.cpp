@@ -779,12 +779,11 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
         net_queue.pop();
 
         for(auto itr = temp_net->cell_list.begin(); itr != temp_net->cell_list.end(); itr++){
-            if((*itr)->get_current_block() == &A)
-                continue;
-
             if((*itr)->get_fixed())
                 continue;
-
+            
+            if((*itr)->get_current_block() != nullptr)
+                continue;
 
             if(A.push_Cell_ub(*itr)){
                 //FreeCellList.push(*itr);

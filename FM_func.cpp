@@ -1,4 +1,4 @@
-#define NDEBUG
+//#define NDEBUG
 #include <iostream>
 #include <cassert>
 #include <list>
@@ -355,6 +355,8 @@ void read_past_block_record(const int _N, const int _C, const Net* _NET_array, c
             NET_array[j].set_net_num(j);
             NET_array[j].set_weight(_NET_array[i].get_weight());
             NET_array[j].push_cell(CELL_array + temp_cell_num);
+            NET_array[j].overlap_net = _NET_array[i].overlap_net;
+            NET_array[j].set_overlap(_NET_array[i].get_overlap());
             CELL_array[temp_cell_num].push_net(NET_array + j);
         }
 
@@ -741,6 +743,8 @@ void read_bin_record(const int _N, const int _C, const Net* _NET_array, const Ce
                     check = false;
                     NET_array[j].set_net_num(j);
                     NET_array[j].set_weight(_NET_array[i].get_weight());
+                    NET_array[j].overlap_net = _NET_array[i].overlap_net;
+                    NET_array[j].set_overlap(_NET_array[i].get_overlap());
                 }
 
                 temp_cell_num = past_to_current[(*itr)->get_cell_num()];
