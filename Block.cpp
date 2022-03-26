@@ -761,11 +761,12 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
 
     net_queue.push(NET_array + 1);
     NET_check_array[1] = false;
+    NET_check_array[0] = false;
 
     while(check){
         if(net_queue.empty()){
             for(int i = 1; i <= N; i++){
-                if(NET_check_array[i]){
+                if(!NET_array[i].overlap_net && NET_check_array[i]){
                     net_queue.push(NET_array + i);
                     NET_check_array[i] = false;
 
@@ -788,6 +789,9 @@ void BlockInitialization(Block &A, Block &B, Cell* CELL_array, Net* NET_array, i
             if(A.push_Cell_ub(*itr)){
                 //FreeCellList.push(*itr);
                 for(auto jtr = (*itr)->net_list.begin(); jtr != (*itr)->net_list.end(); jtr++){
+                    if((*jtr)->overlap_net)
+                        continue;
+                    
                     if(NET_check_array[(*jtr)->get_net_num()]){
                         net_queue.push(*jtr);
                         NET_check_array[(*jtr)->get_net_num()] = false;
